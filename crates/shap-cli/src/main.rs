@@ -3,6 +3,7 @@
 //! Thin binary: parse CLI, init logging, dispatch to handlers, map results to
 //! exit codes (0 success, 1 handled error, 2 usage — the latter via clap).
 
+mod app;
 mod cli;
 
 use clap::Parser;
@@ -28,8 +29,13 @@ async fn main() {
 /// Route a parsed command to its handler. Handlers land per user story; until
 /// then they report a clear "not implemented yet" diagnostic.
 async fn dispatch(args: Cli) -> Result<(), Error> {
-    match args.command {
-        Command::Send { .. } => Err(unimplemented("send")),
+    let Cli {
+        cwd,
+        config,
+        command,
+    } = args;
+    match command {
+        Command::Send { prompt } => app::send(config, cwd, &prompt).await,
         Command::Agent { .. } => Err(unimplemented("agent")),
         Command::Model { .. } => Err(unimplemented("model")),
         Command::Reasoning { .. } => Err(unimplemented("reasoning")),

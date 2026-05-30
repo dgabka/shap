@@ -4,4 +4,7 @@
 //! and exposes the agent [`registry`]. The binary and tests depend only on the
 //! `AgentClient` trait, never on the concrete SDK types.
 
+pub mod acp;
 pub mod registry;
+
+pub use acp::AcpClient;

@@ -79,14 +79,14 @@ end-to-end tests `tests/integration/`.
 ### Implementation for User Story 1
 
 - [x] T020 [P] [US1] Implement the agent registry (configured agent → launchable process spec) in `crates/shap-agent/src/registry.rs` (depends on T008, T009)
-- [ ] T021 [US1] Implement the ACP wrapper over tokio child-process stdio, implementing `AgentClient` (start session, send, stream) in `crates/shap-agent/src/acp.rs` (depends on T008, T020)
+- [x] T021 [US1] Implement the ACP wrapper over tokio child-process stdio, implementing `AgentClient` (start session, send, stream) in `crates/shap-agent/src/acp.rs` (depends on T008, T020)
 - [ ] T022 [P] [US1] Implement session-id ↔ ACP session mapping in `crates/shap-agent/src/session.rs` (depends on T008)
 - [x] T023 [P] [US1] Implement the JSONL session store (create file, append `session_started`/`user_prompt`/`agent_response`/`error`, tolerate corrupt trailing lines) in `crates/shap-core/src/session.rs` (depends on T006, T007)
 - [x] T024 [P] [US1] Implement `@file` detection/resolution/guards in `crates/shap-core/src/files.rs` (depends on T009)
 - [x] T025 [P] [US1] Implement base prompt composition (prompt + attachments) in `crates/shap-core/src/prompt.rs` (depends on T024)
 - [x] T026 [P] [US1] Implement output rendering — streamed and spinner-then-final (`indicatif`/`anstream`) — in `crates/shap-shell/src/render.rs` (depends on T007)
 - [x] T027 [US1] Implement the `send` command handler wiring registry + ACP + session store + `@file` + rendering in `crates/shap-core/src/commands.rs` (depends on T021, T023, T024, T025, T026, T010)
-- [ ] T028 [US1] Implement no-agent-configured setup instructions and missing-agent error (suggests `shap doctor`) in `crates/shap-core/src/commands.rs` / `crates/shap-core/src/error.rs` (depends on T027)
+- [x] T028 [US1] Implement no-agent-configured setup instructions and missing-agent error (suggests `shap doctor`) in `crates/shap-core/src/commands.rs` / `crates/shap-core/src/error.rs` (depends on T027)
 - [ ] T029 [US1] Add the Zsh `: <prompt>` mapping and `shell/zsh/shap.zsh` source skeleton (cwd forwarding, minimal error display) (depends on T011)
 
 **Checkpoint**: US1 is a usable MVP — chat with one agent from the shell.
