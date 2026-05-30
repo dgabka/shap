@@ -1,0 +1,9 @@
+/target
+**/*.rs.bk
+*.pdb
+
+# direnv / nix
+/.direnv/
+
+# insta pending snapshots
+*.snap.new

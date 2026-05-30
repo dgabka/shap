@@ -1,0 +1,22 @@
+[package]
+name = "shap-shell"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+shap-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+console = { workspace = true }
+anstream = { workspace = true }
+anstyle = { workspace = true }
+indicatif = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }
+
+[lints]
+workspace = true

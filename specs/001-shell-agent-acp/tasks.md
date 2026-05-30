@@ -34,11 +34,11 @@ end-to-end tests `tests/integration/`.
 
 **Purpose**: Workspace skeleton and tooling.
 
-- [ ] T001 Create Cargo workspace manifest and four crate skeletons (`Cargo.toml`, `crates/shap-cli/{Cargo.toml,src/main.rs}`, `crates/shap-core/{Cargo.toml,src/lib.rs}`, `crates/shap-agent/{Cargo.toml,src/lib.rs}`, `crates/shap-shell/{Cargo.toml,src/lib.rs}`)
-- [ ] T002 Declare shared dependencies in `[workspace.dependencies]` in `Cargo.toml` per plan.md (tokio, tokio-util, futures, async-trait, clap, clap_complete, serde, serde_json, toml, schemars, anyhow, thiserror, miette, tracing, tracing-subscriber, which, dialoguer, indicatif, console, anstream, anstyle, terminal_size, ignore, globset, dunce, shell-words, agent-client-protocol, agent-client-protocol-tokio; dev: assert_cmd, predicates, insta, tempfile, test-case, agent-client-protocol-test)
-- [ ] T003 [P] Add `rustfmt.toml` and crate-level clippy config; confirm `cargo clippy --all-targets --all-features -- -D warnings` is clean on the skeleton
-- [ ] T004 [P] Add CI workflow `.github/workflows/ci.yml` running fmt check, clippy `-D warnings`, `cargo nextest run --all-features`, `cargo audit`, `cargo deny check`
-- [ ] T005 [P] Add `deny.toml` for cargo-deny (advisories, licenses, bans)
+- [x] T001 Create Cargo workspace manifest and four crate skeletons (`Cargo.toml`, `crates/shap-cli/{Cargo.toml,src/main.rs}`, `crates/shap-core/{Cargo.toml,src/lib.rs}`, `crates/shap-agent/{Cargo.toml,src/lib.rs}`, `crates/shap-shell/{Cargo.toml,src/lib.rs}`)
+- [x] T002 Declare shared dependencies in `[workspace.dependencies]` in `Cargo.toml` per plan.md (tokio, tokio-util, futures, async-trait, clap, clap_complete, serde, serde_json, toml, schemars, anyhow, thiserror, miette, tracing, tracing-subscriber, which, dialoguer, indicatif, console, anstream, anstyle, terminal_size, ignore, globset, dunce, shell-words, agent-client-protocol, agent-client-protocol-tokio; dev: assert_cmd, predicates, insta, tempfile, test-case, agent-client-protocol-test)
+- [x] T003 [P] Add `rustfmt.toml` and crate-level clippy config; confirm `cargo clippy --all-targets --all-features -- -D warnings` is clean on the skeleton
+- [x] T004 [P] Add CI workflow `.github/workflows/ci.yml` running fmt check, clippy `-D warnings`, `cargo nextest run --all-features`, `cargo audit`, `cargo deny check`
+- [x] T005 [P] Add `deny.toml` for cargo-deny (advisories, licenses, bans)
 
 ---
 

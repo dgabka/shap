@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: fmt · clippy · test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: fmt
+        run: cargo fmt --all --check
+      - name: clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: install nextest
+        uses: taiki-e/install-action@nextest
+      - name: test
+        run: cargo nextest run --all-features
+
+  audit:
+    name: audit · deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: install cargo-audit / cargo-deny
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit,cargo-deny
+      - name: audit
+        run: cargo audit
+      - name: deny
+        run: cargo deny check

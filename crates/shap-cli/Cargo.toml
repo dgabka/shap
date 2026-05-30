@@ -1,0 +1,32 @@
+[package]
+name = "shap-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "shap"
+path = "src/main.rs"
+
+[dependencies]
+shap-core = { workspace = true }
+shap-agent = { workspace = true }
+shap-shell = { workspace = true }
+clap = { workspace = true }
+clap_complete = { workspace = true }
+anyhow = { workspace = true }
+miette = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+predicates = { workspace = true }
+tempfile = { workspace = true }
+insta = { workspace = true }
+
+[lints]
+workspace = true

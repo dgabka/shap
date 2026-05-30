@@ -1,0 +1,28 @@
+[package]
+name = "shap-agent"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+shap-core = { workspace = true }
+async-trait = { workspace = true }
+futures = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+# ACP SDK added in Phase 3 (US1, T021):
+# agent-client-protocol = { workspace = true }
+# agent-client-protocol-tokio = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

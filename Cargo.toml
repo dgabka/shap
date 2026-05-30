@@ -1,0 +1,76 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/shap-cli",
+    "crates/shap-core",
+    "crates/shap-agent",
+    "crates/shap-shell",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "Apache-2.0"
+repository = "https://github.com/dgabka/shap"
+
+[workspace.dependencies]
+# Internal crates
+shap-core = { path = "crates/shap-core" }
+shap-agent = { path = "crates/shap-agent" }
+shap-shell = { path = "crates/shap-shell" }
+
+# Async / process
+tokio = { version = "1", features = ["process", "io-util", "macros", "rt-multi-thread", "fs", "sync", "time"] }
+tokio-util = "0.7"
+futures = "0.3"
+async-trait = "0.1"
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+clap_complete = "4"
+
+# ACP
+agent-client-protocol = "0.12"
+agent-client-protocol-tokio = "0.11"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+schemars = "0.8"
+
+# Diagnostics / logging
+anyhow = "1"
+thiserror = "2"
+miette = { version = "7", features = ["fancy"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Pickers / UX
+which = "7"
+dialoguer = "0.11"
+indicatif = "0.17"
+console = "0.15"
+anstream = "0.6"
+anstyle = "1"
+terminal_size = "0.4"
+
+# Files / Git
+ignore = "0.4"
+globset = "0.4"
+dunce = "1"
+shell-words = "1"
+
+# Time
+time = { version = "0.3", features = ["formatting", "parsing", "macros"] }
+
+# Dev / test
+assert_cmd = "2"
+predicates = "3"
+insta = { version = "1", features = ["json"] }
+tempfile = "3"
+test-case = "3"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
