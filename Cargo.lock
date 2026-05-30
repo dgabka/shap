@@ -1067,6 +1067,7 @@ dependencies = [
  "anstream 0.6.21",
  "anstyle",
  "anyhow",
+ "async-trait",
  "console 0.15.11",
  "dialoguer",
  "dunce",

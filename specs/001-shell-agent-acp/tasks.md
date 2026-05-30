@@ -48,17 +48,17 @@ end-to-end tests `tests/integration/`.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T006 Implement path resolution (XDG dirs, `SHAP_CONFIG`/`SHAP_DATA_DIR` overrides, `~`/`$XDG_*` expansion) in `crates/shap-core/src/paths.rs`
-- [ ] T007 [P] Define the domain error enum with `thiserror` + `miette` diagnostics (actionable messages) in `crates/shap-core/src/error.rs`
-- [ ] T008 [P] Define the `AgentClient` trait and `AgentRequest`/`AgentResponse`/`AgentStream`/`SessionOptions`/`SessionId` types in `crates/shap-agent/src/client.rs`
-- [ ] T009 Implement `Config`/`Agent`/`UiOptions`/`HistoryOptions`/`FileOptions` types, TOML loader, and validation in `crates/shap-core/src/config.rs` (depends on T006, T007)
-- [ ] T010 Implement `ActiveState` type with atomic JSON read/write (temp file + rename) and config cross-check/repair in `crates/shap-core/src/state.rs` (depends on T006, T007)
-- [ ] T011 Implement clap CLI definitions (subcommands `send`, `agent`, `model`, `reasoning`, `new`, `status`, `commit`, `run`, `read`, `doctor`; global `--cwd`/`--config`), dispatch, and exit-code mapping (0/1/2) in `crates/shap-cli/src/cli.rs` and `crates/shap-cli/src/main.rs` (depends on T007)
-- [ ] T012 Initialize `tracing` subscriber with env-filter in `crates/shap-cli/src/main.rs` (depends on T011)
-- [ ] T013 [P] Wire `crates/shap-core/src/lib.rs` module exports (paths, error, config, state) (depends on T006, T007, T009, T010)
-- [ ] T014 [P] Unit tests for config validation — `default_agent` membership, `default_model ∈ models`, picker enum, positive byte limits, missing-file path — in `crates/shap-core/src/config.rs` (depends on T009)
-- [ ] T015 [P] Unit tests for state atomic read/write and missing-file → all-null in `crates/shap-core/src/state.rs` (depends on T010)
-- [ ] T016 [P] Unit tests for path resolution and env overrides in `crates/shap-core/src/paths.rs` (depends on T006)
+- [x] T006 Implement path resolution (XDG dirs, `SHAP_CONFIG`/`SHAP_DATA_DIR` overrides, `~`/`$XDG_*` expansion) in `crates/shap-core/src/paths.rs`
+- [x] T007 [P] Define the domain error enum with `thiserror` + `miette` diagnostics (actionable messages) in `crates/shap-core/src/error.rs`
+- [x] T008 [P] Define the `AgentClient` trait and `AgentRequest`/`AgentResponse`/`AgentStream`/`SessionOptions`/`SessionId` types in `crates/shap-agent/src/client.rs`
+- [x] T009 Implement `Config`/`Agent`/`UiOptions`/`HistoryOptions`/`FileOptions` types, TOML loader, and validation in `crates/shap-core/src/config.rs` (depends on T006, T007)
+- [x] T010 Implement `ActiveState` type with atomic JSON read/write (temp file + rename) and config cross-check/repair in `crates/shap-core/src/state.rs` (depends on T006, T007)
+- [x] T011 Implement clap CLI definitions (subcommands `send`, `agent`, `model`, `reasoning`, `new`, `status`, `commit`, `run`, `read`, `doctor`; global `--cwd`/`--config`), dispatch, and exit-code mapping (0/1/2) in `crates/shap-cli/src/cli.rs` and `crates/shap-cli/src/main.rs` (depends on T007)
+- [x] T012 Initialize `tracing` subscriber with env-filter in `crates/shap-cli/src/main.rs` (depends on T011)
+- [x] T013 [P] Wire `crates/shap-core/src/lib.rs` module exports (paths, error, config, state) (depends on T006, T007, T009, T010)
+- [x] T014 [P] Unit tests for config validation — `default_agent` membership, `default_model ∈ models`, picker enum, positive byte limits, missing-file path — in `crates/shap-core/src/config.rs` (depends on T009)
+- [x] T015 [P] Unit tests for state atomic read/write and missing-file → all-null in `crates/shap-core/src/state.rs` (depends on T010)
+- [x] T016 [P] Unit tests for path resolution and env overrides in `crates/shap-core/src/paths.rs` (depends on T006)
 
 **Checkpoint**: Foundation ready — user stories can begin.
 
