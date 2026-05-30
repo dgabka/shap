@@ -1033,11 +1033,14 @@ dependencies = [
  "serde",
  "serde_json",
  "shap-core",
+ "shell-words",
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
  "tokio-util",
+ "toml",
  "tracing",
+ "which",
 ]
 
 [[package]]

@@ -58,21 +58,23 @@ pub struct AgentResponse {
 
 /// SDK-agnostic agent client.
 ///
-/// Implementations stream response text via `on_chunk`; the UI layer decides
-/// whether to render chunks live (stream mode) or wait for the final
-/// [`AgentResponse`] (spinner mode). Errors map into the core [`Error`] type.
+/// One-shot per call: launch the agent, open a session in `opts.cwd`, send one
+/// prompt, stream the reply, and return the assembled text. This matches both
+/// the ACP SDK's single connection scope and shap's per-invocation CLI model
+/// (each `shap send` is its own process). Conversation continuity in the MVP is
+/// at the JSONL session-log level; live multi-turn ACP resume is future
+/// (FR-014).
+///
+/// `on_chunk` is invoked for each streamed text delta as it arrives; the UI
+/// layer decides whether to render chunks live (stream mode) or wait for the
+/// final [`AgentResponse`] (spinner mode). Errors map into the core [`Error`].
 ///
 /// [`Error`]: crate::error::Error
 #[async_trait]
-pub trait AgentClient: Send {
-    /// Launch the agent process (if needed) and open a session.
-    async fn start_session(&mut self, opts: &SessionOptions) -> Result<SessionId>;
-
-    /// Send a prompt and stream the reply. `on_chunk` is invoked for each text
-    /// delta as it arrives; the returned [`AgentResponse`] holds the full text.
-    async fn prompt(
-        &mut self,
-        session: &SessionId,
+pub trait AgentClient: Send + Sync {
+    async fn run_prompt(
+        &self,
+        opts: &SessionOptions,
         request: &AgentRequest,
         on_chunk: &mut (dyn FnMut(&str) + Send),
     ) -> Result<AgentResponse>;

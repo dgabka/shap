@@ -17,12 +17,15 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
-# ACP SDK added in Phase 3 (US1, T021):
+which = { workspace = true }
+shell-words = { workspace = true }
+# ACP SDK wired in at T021 (the ACP wrapper); kept out until then so the
+# US1 library layer builds lean (Constitution IX).
 # agent-client-protocol = { workspace = true }
-# agent-client-protocol-tokio = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+toml = { workspace = true }
 
 [lints]
 workspace = true

@@ -8,7 +8,10 @@
 pub mod agent;
 pub mod config;
 pub mod error;
+pub mod files;
 pub mod paths;
+pub mod prompt;
+pub mod session;
 pub mod state;
 
 pub use error::{Error, Result};
