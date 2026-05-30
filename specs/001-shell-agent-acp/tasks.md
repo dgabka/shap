@@ -87,7 +87,7 @@ end-to-end tests `tests/integration/`.
 - [x] T026 [P] [US1] Implement output rendering — streamed and spinner-then-final (`indicatif`/`anstream`) — in `crates/shap-shell/src/render.rs` (depends on T007)
 - [x] T027 [US1] Implement the `send` command handler wiring registry + ACP + session store + `@file` + rendering in `crates/shap-core/src/commands.rs` (depends on T021, T023, T024, T025, T026, T010)
 - [x] T028 [US1] Implement no-agent-configured setup instructions and missing-agent error (suggests `shap doctor`) in `crates/shap-core/src/commands.rs` / `crates/shap-core/src/error.rs` (depends on T027)
-- [ ] T029 [US1] Add the Zsh `: <prompt>` mapping and `shell/zsh/shap.zsh` source skeleton (cwd forwarding, minimal error display) (depends on T011)
+- [x] T029 [US1] Add the Zsh `: <prompt>` mapping and `shell/zsh/shap.zsh` source skeleton (cwd forwarding, minimal error display) (depends on T011)
 
 **Checkpoint**: US1 is a usable MVP — chat with one agent from the shell.
 
