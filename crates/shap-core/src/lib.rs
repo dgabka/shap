@@ -6,6 +6,7 @@
 //! seam that `shap-agent` implements.
 
 pub mod agent;
+pub mod commands;
 pub mod config;
 pub mod error;
 pub mod files;

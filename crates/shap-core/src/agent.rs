@@ -56,6 +56,12 @@ pub struct AgentResponse {
     pub text: String,
 }
 
+/// Sink for streamed response text deltas. The explicit higher-ranked lifetime
+/// keeps the `&str` argument generic across `async_trait`'s desugaring (without
+/// `for<'a>` the lifetime gets pinned and callers fail to borrow-check). The
+/// `'s` parameter lets callers pass a sink that borrows non-`'static` state.
+pub type ChunkSink<'s> = dyn for<'a> FnMut(&'a str) + Send + 's;
+
 /// SDK-agnostic agent client.
 ///
 /// One-shot per call: launch the agent, open a session in `opts.cwd`, send one
@@ -76,6 +82,6 @@ pub trait AgentClient: Send + Sync {
         &self,
         opts: &SessionOptions,
         request: &AgentRequest,
-        on_chunk: &mut (dyn FnMut(&str) + Send),
+        on_chunk: &mut ChunkSink<'_>,
     ) -> Result<AgentResponse>;
 }

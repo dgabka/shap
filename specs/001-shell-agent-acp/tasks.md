@@ -72,7 +72,7 @@ end-to-end tests `tests/integration/`.
 
 ### Tests for User Story 1
 
-- [ ] T017 [P] [US1] Integration test: `shap send "hello"` returns agent output using a mock ACP agent (`agent-client-protocol-test`) in `tests/integration/send.rs`
+- [x] T017 [P] [US1] Integration test: `shap send "hello"` returns agent output using a mock ACP agent (`agent-client-protocol-test`) in `tests/integration/send.rs`
 - [x] T018 [P] [US1] Unit tests: `@file` expansion (resolve relative to cwd, reject binary, enforce `max_file_bytes`, honor gitignore, leave unresolved `@refs` visible) in `crates/shap-core/src/files.rs`
 - [x] T019 [P] [US1] Unit test: base prompt composition in `crates/shap-core/src/prompt.rs`
 
@@ -85,7 +85,7 @@ end-to-end tests `tests/integration/`.
 - [x] T024 [P] [US1] Implement `@file` detection/resolution/guards in `crates/shap-core/src/files.rs` (depends on T009)
 - [x] T025 [P] [US1] Implement base prompt composition (prompt + attachments) in `crates/shap-core/src/prompt.rs` (depends on T024)
 - [x] T026 [P] [US1] Implement output rendering — streamed and spinner-then-final (`indicatif`/`anstream`) — in `crates/shap-shell/src/render.rs` (depends on T007)
-- [ ] T027 [US1] Implement the `send` command handler wiring registry + ACP + session store + `@file` + rendering in `crates/shap-core/src/commands.rs` (depends on T021, T023, T024, T025, T026, T010)
+- [x] T027 [US1] Implement the `send` command handler wiring registry + ACP + session store + `@file` + rendering in `crates/shap-core/src/commands.rs` (depends on T021, T023, T024, T025, T026, T010)
 - [ ] T028 [US1] Implement no-agent-configured setup instructions and missing-agent error (suggests `shap doctor`) in `crates/shap-core/src/commands.rs` / `crates/shap-core/src/error.rs` (depends on T027)
 - [ ] T029 [US1] Add the Zsh `: <prompt>` mapping and `shell/zsh/shap.zsh` source skeleton (cwd forwarding, minimal error display) (depends on T011)
 
