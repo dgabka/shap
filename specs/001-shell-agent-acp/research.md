@@ -17,9 +17,13 @@ are reviewable against the constitution (especially Principles I, II, and IX).
 
 ## D2. ACP integration — official SDK, wrapped behind a trait
 
-- **Decision**: Depend on `agent-client-protocol` (+ `agent-client-protocol-tokio` for stdio transport,
-  `agent-client-protocol-test` for tests). Wrap it behind an internal `AgentClient` trait in
-  `shap-agent`; the rest of the app never touches SDK types directly.
+- **Decision**: Depend on `agent-client-protocol` (its built-in stdio transport bridged to Tokio child
+  pipes via `tokio-util` `compat`). Wrap it behind an `AgentClient` trait in **`shap-core::agent`**
+  (so `shap-core::commands` can call it without a cycle); `shap-agent` implements the trait and is the
+  only crate that touches SDK types.
+  - **Revised during implementation**: `agent-client-protocol-tokio` proved unnecessary, and
+    `agent-client-protocol-test` does not exist on crates.io — ACP integration is tested by mocking the
+    `AgentClient` trait. The shipped SDK is `agent-client-protocol` 0.12.
 - **Rationale**: Principle IX (don't hand-roll the protocol) and Principle III/X (isolate vendor
   surface so command handlers stay SDK-agnostic and FR-035 stays achievable).
 - **Alternatives**: Hand-rolling ACP message types (more code, more drift risk, rejected); coupling
@@ -115,8 +119,9 @@ are reviewable against the constitution (especially Principles I, II, and IX).
 
 - **Decision**: Unit tests for parsing/config/state/session/prompt composition/capture; `assert_cmd` +
   `predicates` integration tests on the binary; `insta` snapshots for diagnostics, generated prompts,
-  commit messages, status, and doctor output; `tempfile` for isolated FS; `agent-client-protocol-test`
-  for the ACP wrapper; `wiremock` only if HTTP appears.
+  commit messages, status, and doctor output; `tempfile` for isolated FS; the ACP wrapper is tested by
+  mocking the `AgentClient` trait (the `agent-client-protocol-test` crate does not exist); `wiremock`
+  only if HTTP appears.
 - **Rationale**: Principle IV — meaningful logic and generated text are exactly what regressions hide in.
 - **Alternatives**: Manual testing only (rejected — generated prompts/messages need snapshot guards).
 

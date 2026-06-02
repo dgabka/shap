@@ -63,7 +63,7 @@ This defines the `:` commands, the optional prompt segment, and the ZLE widget u
 :agent                 # picker of configured agents → pick codex
 :model                 # picker of codex's models only → pick gpt-5
 :reasoning             # picker of levels → pick high
-# prompt segment now shows:  ~/project <codex/gpt-5/high> $
+# prompt segment now shows:  ~/project [shap codex·gpt-5·high] $
 
 # US1 — chat
 : hello                            # streamed reply appears
@@ -115,4 +115,6 @@ pnpm test 2>&1 | shap read "fix the test"   # pipe mode
 - [ ] Config + sessions survive a shell restart.
 - [ ] Missing agent command → clear error suggesting `shap doctor`; no agents configured → setup help.
 - [ ] Prompt segment can be toggled via `[ui].show_prompt_segment`.
+- [ ] Prompt-segment rendering is instant (well under 50 ms) and reads only cached state — `shap
+      prompt-segment` performs no config parse and never contacts an agent (SC-006).
 ```

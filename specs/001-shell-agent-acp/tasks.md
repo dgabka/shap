@@ -35,7 +35,7 @@ end-to-end tests `tests/integration/`.
 **Purpose**: Workspace skeleton and tooling.
 
 - [x] T001 Create Cargo workspace manifest and four crate skeletons (`Cargo.toml`, `crates/shap-cli/{Cargo.toml,src/main.rs}`, `crates/shap-core/{Cargo.toml,src/lib.rs}`, `crates/shap-agent/{Cargo.toml,src/lib.rs}`, `crates/shap-shell/{Cargo.toml,src/lib.rs}`)
-- [x] T002 Declare shared dependencies in `[workspace.dependencies]` in `Cargo.toml` per plan.md (tokio, tokio-util, futures, async-trait, clap, clap_complete, serde, serde_json, toml, schemars, anyhow, thiserror, miette, tracing, tracing-subscriber, which, dialoguer, indicatif, console, anstream, anstyle, terminal_size, ignore, globset, dunce, shell-words, agent-client-protocol, agent-client-protocol-tokio; dev: assert_cmd, predicates, insta, tempfile, test-case, agent-client-protocol-test)
+- [x] T002 Declare shared dependencies in `[workspace.dependencies]` in `Cargo.toml` per plan.md (tokio, tokio-util, futures, async-trait, clap, clap_complete, serde, serde_json, toml, schemars, anyhow, thiserror, miette, tracing, tracing-subscriber, which, dialoguer, indicatif, console, anstream, anstyle, terminal_size, ignore, globset, dunce, shell-words, time, agent-client-protocol; dev: assert_cmd, predicates, insta, tempfile, test-case) — `agent-client-protocol-tokio` is not needed (the core crate's stdio transport is bridged to Tokio via `tokio-util` `compat`) and `agent-client-protocol-test` does not exist on crates.io
 - [x] T003 [P] Add `rustfmt.toml` and crate-level clippy config; confirm `cargo clippy --all-targets --all-features -- -D warnings` is clean on the skeleton
 - [x] T004 [P] Add CI workflow `.github/workflows/ci.yml` running fmt check, clippy `-D warnings`, `cargo nextest run --all-features`, `cargo audit`, `cargo deny check`
 - [x] T005 [P] Add `deny.toml` for cargo-deny (advisories, licenses, bans)
@@ -50,7 +50,7 @@ end-to-end tests `tests/integration/`.
 
 - [x] T006 Implement path resolution (XDG dirs, `SHAP_CONFIG`/`SHAP_DATA_DIR` overrides, `~`/`$XDG_*` expansion) in `crates/shap-core/src/paths.rs`
 - [x] T007 [P] Define the domain error enum with `thiserror` + `miette` diagnostics (actionable messages) in `crates/shap-core/src/error.rs`
-- [x] T008 [P] Define the `AgentClient` trait and `AgentRequest`/`AgentResponse`/`AgentStream`/`SessionOptions`/`SessionId` types in `crates/shap-agent/src/client.rs`
+- [x] T008 [P] Define the `AgentClient` trait and `AgentRequest`/`AgentResponse`/`SessionOptions`/`SessionId`/`ChunkSink` types in `crates/shap-core/src/agent.rs` — the trait lives in `shap-core` (not `shap-agent`) so `shap-core::commands` can call it without a dependency cycle; `shap-agent` implements it. Streaming uses an `on_chunk` callback rather than an `AgentStream` type.
 - [x] T009 Implement `Config`/`Agent`/`UiOptions`/`HistoryOptions`/`FileOptions` types, TOML loader, and validation in `crates/shap-core/src/config.rs` (depends on T006, T007)
 - [x] T010 Implement `ActiveState` type with atomic JSON read/write (temp file + rename) and config cross-check/repair in `crates/shap-core/src/state.rs` (depends on T006, T007)
 - [x] T011 Implement clap CLI definitions (subcommands `send`, `agent`, `model`, `reasoning`, `new`, `status`, `commit`, `run`, `read`, `doctor`; global `--cwd`/`--config`), dispatch, and exit-code mapping (0/1/2) in `crates/shap-cli/src/cli.rs` and `crates/shap-cli/src/main.rs` (depends on T007)
@@ -72,7 +72,7 @@ end-to-end tests `tests/integration/`.
 
 ### Tests for User Story 1
 
-- [x] T017 [P] [US1] Integration test: `shap send "hello"` returns agent output using a mock ACP agent (`agent-client-protocol-test`) in `tests/integration/send.rs`
+- [x] T017 [P] [US1] Integration test: `shap send "hello"` returns agent output using a mock `AgentClient` (the `agent-client-protocol-test` crate does not exist, so mock the trait directly) in `crates/shap-core/src/commands.rs` tests
 - [x] T018 [P] [US1] Unit tests: `@file` expansion (resolve relative to cwd, reject binary, enforce `max_file_bytes`, honor gitignore, leave unresolved `@refs` visible) in `crates/shap-core/src/files.rs`
 - [x] T019 [P] [US1] Unit test: base prompt composition in `crates/shap-core/src/prompt.rs`
 

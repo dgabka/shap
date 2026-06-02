@@ -62,27 +62,31 @@ select one; run `:model` and confirm only that agent's models are offered.
 4. **Given** the user runs `:reasoning`, **Then** a picker of reasoning-effort levels opens; `:effort`
    behaves identically.
 5. **Given** the prompt segment is enabled, **When** the active agent/model/reasoning change,
-   **Then** the shell prompt reflects the current selection (e.g., `<codex/gpt-5/high>`).
+   **Then** the shell prompt reflects the current selection (e.g., `[shap codex·gpt-5·high]`).
 6. **Given** the prompt segment is disabled in configuration, **Then** no such segment is shown.
 
 ---
 
 ### User Story 3 - Persistent conversations and session control (Priority: P2)
 
-A developer's follow-up prompts continue the same conversation so context is preserved. They can
+A developer's follow-up prompts stay in the same local session (one saved conversation log). They can
 start a fresh conversation with `:new` (keeping their agent/model/reasoning selections), inspect the
 current state with `:status`, and have configuration and sessions persist across terminal restarts.
+(Replaying that log so the agent is aware of earlier turns is *resume* — see FR-014 — and is out of
+scope for the MVP.)
 
 **Why this priority**: Conversation continuity makes multi-step help useful, but a single-shot prompt
 (US1) is still valuable on its own.
 
-**Independent Test**: Send two related prompts and confirm the second is answered with awareness of
-the first; run `:new` and confirm a fresh session starts while the agent/model/reasoning stay the same.
+**Independent Test**: Send two prompts and confirm both are recorded in the same session (one log,
+unchanged session identifier); run `:new` and confirm a fresh session starts while the
+agent/model/reasoning stay the same.
 
 **Acceptance Scenarios**:
 
-1. **Given** an active session, **When** the user sends a follow-up prompt, **Then** it is handled
-   within the same conversation context.
+1. **Given** an active session, **When** the user sends a follow-up prompt, **Then** it is appended
+   to the same session (same session log and identifier). *Agent awareness of earlier turns is resume
+   (FR-014), out of scope for the MVP.*
 2. **Given** an active session, **When** the user runs `:new`, **Then** a new session starts and the
    selected agent, model, and reasoning effort are preserved.
 3. **Given** any state, **When** the user runs `:status`, **Then** the active agent, model, reasoning
@@ -167,8 +171,10 @@ confirm a clear error appears suggesting `:doctor`; run `:doctor` and confirm it
 
 ### Edge Cases
 
-- A prompt contains a file reference (e.g., `@test/server.ts`) — the reference is passed through to
-  the agent as part of the prompt text.
+- A prompt contains a file reference (e.g., `@test/server.ts`) — the tool resolves it relative to the
+  working directory and includes the file's contents with the prompt, subject to guards (path exists,
+  not binary, within the configured size limit, gitignore-aware when enabled). The original `@ref`
+  text stays visible in the prompt; refs that fail a guard or do not resolve are left as plain text.
 - The user runs a command that needs a value (e.g., `:agent`) but no interactive picker is available
   in the current environment — the tool reports how to supply the value directly.
 - Captured command output is very large — output is bounded to a configured maximum size before being
@@ -205,8 +211,10 @@ confirm a clear error appears suggesting `:doctor`; run `:doctor` and confirm it
 
 **Sessions and state**
 
-- **FR-009**: The tool MUST maintain conversation context so follow-up prompts continue the same
-  session.
+- **FR-009**: The tool MUST keep follow-up prompts in the same local session — appended to one
+  session log under a stable session identifier — until the user starts a new one. Replaying that
+  history so the agent is aware of earlier turns is part of resume (see FR-014) and is out of scope
+  for the MVP.
 - **FR-010**: The tool MUST let a user start a new conversation with `:new`, preserving the selected
   agent, model, and reasoning effort.
 - **FR-011**: The tool MUST display current status (active agent, model, reasoning effort, session
@@ -296,7 +304,9 @@ confirm a clear error appears suggesting `:doctor`; run `:doctor` and confirm it
 - **SC-005**: When an agent is missing or unavailable, 100% of failures produce a readable message
   that names a concrete next step (e.g., run `:doctor`).
 - **SC-006**: Enabling the shell integration adds no perceptible delay to prompt rendering for normal
-  (non-agent) commands.
+  (non-agent) commands. Concretely, the prompt-segment path reads only cached state (no config parse,
+  no agent contact) and completes in well under 50 ms. Verified as a manual check in the quickstart
+  acceptance walkthrough.
 - **SC-007**: Every colon command produces the same result when the equivalent core tool command is
   invoked directly, confirming the tool is usable without the shell layer.
 - **SC-008**: Starting a new conversation with `:new` preserves the selected agent, model, and
@@ -318,9 +328,10 @@ confirm a clear error appears suggesting `:doctor`; run `:doctor` and confirm it
   remote sync, sharing, and cross-device features are out of scope.
 - **Prompt buffer prefill**: The shell integration is able to place text into the user's command input
   buffer for review before execution (used by `:commit`).
-- **File references in prompts**: Tokens such as `@path/to/file` are passed through to the agent as
-  part of the prompt; the tool does not itself resolve or attach file contents in the MVP unless the
-  agent requests it.
+- **File references in prompts**: Tokens such as `@path/to/file` are resolved relative to the working
+  directory and their contents are attached to the prompt, subject to guards (path exists, not binary,
+  within `max_file_bytes`, gitignore-aware when enabled). The original `@ref` text is preserved; refs
+  that fail a guard or do not resolve are left as visible text.
 - **Out of scope for MVP**: automatic scrollback capture, Bash/Fish support, web UI, remote sync, team
   sharing, automatic code modification without confirmation, automatic Git commits, complex session
   search, plugin marketplace, and editor integrations.
