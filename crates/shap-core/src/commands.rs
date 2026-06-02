@@ -106,6 +106,57 @@ pub fn set_reasoning(
     Ok(chosen)
 }
 
+/// Start a new session (`shap new`), preserving the active agent/model/
+/// reasoning (FR-010, SC-008). Returns the new session id.
+pub fn new_session(
+    config: &Config,
+    state: &mut ActiveState,
+    sessions_dir: &Path,
+) -> Result<String> {
+    let agent_name = state
+        .active_agent
+        .clone()
+        .unwrap_or_else(|| config.default_agent.clone());
+    let agent = config
+        .agent(&agent_name)
+        .ok_or_else(|| Error::UnknownAgent {
+            name: agent_name.clone(),
+            configured: config.agent_names().join(", "),
+        })?;
+    let model = match &state.active_model {
+        Some(m) if agent.models.contains(m) => m.clone(),
+        _ => agent.default_model.clone(),
+    };
+    let session = Session::create(sessions_dir, &agent_name, &model)?;
+    state.active_session_id = Some(session.id().to_string());
+    Ok(session.id().to_string())
+}
+
+/// A snapshot of the active selections (`shap status`).
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct Status {
+    pub agent: Option<String>,
+    pub model: Option<String>,
+    pub reasoning: Option<String>,
+    pub session_id: Option<String>,
+}
+
+/// Build the status view from current state.
+pub fn status(state: &ActiveState) -> Status {
+    Status {
+        agent: state.active_agent.clone(),
+        model: state.active_model.clone(),
+        reasoning: state.active_reasoning.clone(),
+        session_id: state.active_session_id.clone(),
+    }
+}
+
+/// Serialize a [`Status`] to a compact JSON line (`shap status --json`).
+pub fn status_json(status: &Status) -> Result<String> {
+    serde_json::to_string(status)
+        .map_err(|e| Error::AgentProtocol(format!("serializing status: {e}")))
+}
+
 /// Result of a successful [`send`].
 #[derive(Debug, Clone)]
 pub struct SendOutcome {

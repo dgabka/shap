@@ -125,15 +125,15 @@ end-to-end tests `tests/integration/`.
 
 ### Tests for User Story 3
 
-- [ ] T038 [P] [US3] Integration test: follow-up prompt continues the same session and `:new` preserves agent/model/reasoning — in `tests/integration/sessions.rs`
-- [ ] T039 [P] [US3] Snapshot test: `shap status` output via `insta` in `tests/integration/status.rs`
+- [x] T038 [P] [US3] Integration test: follow-up prompt continues the same session and `:new` preserves agent/model/reasoning — in `tests/integration/sessions.rs`
+- [x] T039 [P] [US3] Snapshot test: `shap status` output via `insta` in `tests/integration/status.rs`
 
 ### Implementation for User Story 3
 
-- [ ] T040 [US3] Implement active-session continuity in the send path (reuse `active_session_id`, lazy-create on first prompt) in `crates/shap-core/src/commands.rs` (depends on T027, T023)
-- [ ] T041 [US3] Implement the `new` handler (create session, set `active_session_id`, preserve selections) in `crates/shap-core/src/commands.rs` (depends on T023, T010)
-- [ ] T042 [US3] Implement the `status` handler (human output and `--json`: agent/model/reasoning/session id) in `crates/shap-core/src/commands.rs` (depends on T010)
-- [ ] T043 [US3] Add Zsh `:new`/`:status` mappings in `shell/zsh/shap.zsh` (depends on T041, T042)
+- [x] T040 [US3] Implement active-session continuity in the send path (reuse `active_session_id`, lazy-create on first prompt) in `crates/shap-core/src/commands.rs` (depends on T027, T023)
+- [x] T041 [US3] Implement the `new` handler (create session, set `active_session_id`, preserve selections) in `crates/shap-core/src/commands.rs` (depends on T023, T010)
+- [x] T042 [US3] Implement the `status` handler (human output and `--json`: agent/model/reasoning/session id) in `crates/shap-core/src/commands.rs` (depends on T010)
+- [x] T043 [US3] Add Zsh `:new`/`:status` mappings in `shell/zsh/shap.zsh` (depends on T041, T042)
 
 **Checkpoint**: US1–US3 work independently — full session lifecycle.
 

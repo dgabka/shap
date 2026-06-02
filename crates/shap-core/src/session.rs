@@ -153,7 +153,9 @@ impl Session {
 
 fn format_id(now: OffsetDateTime) -> String {
     // ':' is illegal in many filenames, so the id uses '-' for time separators.
-    let fmt = format_description!("[year]-[month]-[day]T[hour]-[minute]-[second]Z");
+    // Millisecond precision keeps ids unique even for rapid `:new` calls.
+    let fmt =
+        format_description!("[year]-[month]-[day]T[hour]-[minute]-[second]-[subsecond digits:3]Z");
     now.format(&fmt).unwrap_or_else(|_| "session".to_string())
 }
 

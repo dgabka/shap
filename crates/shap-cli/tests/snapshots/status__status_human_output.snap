@@ -1,0 +1,8 @@
+---
+source: crates/shap-cli/tests/status.rs
+expression: stdout
+---
+agent:     codex
+model:     gpt-5
+reasoning: high
+session:   -

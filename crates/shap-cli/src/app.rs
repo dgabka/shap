@@ -131,6 +131,39 @@ pub fn set_reasoning(
     Ok(())
 }
 
+/// `shap new` — start a fresh session, preserving agent/model/reasoning.
+pub fn new_session(
+    config_override: Option<PathBuf>,
+    cwd_override: Option<PathBuf>,
+) -> Result<(), Error> {
+    let mut ctx = Context::load(config_override, cwd_override)?;
+    let sessions_dir = ctx.sessions_dir();
+    let id = commands::new_session(&ctx.config, &mut ctx.state, &sessions_dir)?;
+    ctx.state.save(&ctx.paths.state())?;
+    println!("new session: {id}");
+    Ok(())
+}
+
+/// `shap status` — show the active agent/model/reasoning/session.
+pub fn status(
+    config_override: Option<PathBuf>,
+    cwd_override: Option<PathBuf>,
+    json: bool,
+) -> Result<(), Error> {
+    let ctx = Context::load(config_override, cwd_override)?;
+    let status = commands::status(&ctx.state);
+    if json {
+        println!("{}", commands::status_json(&status)?);
+    } else {
+        let dash = |o: &Option<String>| o.clone().unwrap_or_else(|| "-".to_string());
+        println!("agent:     {}", dash(&status.agent));
+        println!("model:     {}", dash(&status.model));
+        println!("reasoning: {}", dash(&status.reasoning));
+        println!("session:   {}", dash(&status.session_id));
+    }
+    Ok(())
+}
+
 /// `shap prompt-segment` — print the cached prompt segment. Reads only
 /// state.json (no config, no agent) so the shell hook stays cheap.
 pub fn prompt_segment(config_override: Option<PathBuf>) -> Result<(), Error> {
