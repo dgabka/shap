@@ -147,6 +147,25 @@ pub enum Error {
     )]
     FileTooLarge { path: PathBuf, bytes: u64, max: u64 },
 
+    #[error("\"{level}\" is not a valid reasoning level")]
+    #[diagnostic(code(shap::reasoning::invalid), help("choose one of: {valid}"))]
+    InvalidReasoning { level: String, valid: String },
+
+    #[error("cannot open an interactive picker (no terminal)")]
+    #[diagnostic(
+        code(shap::picker::non_interactive),
+        help("pass a value explicitly, e.g. `shap {command} <value>`.")
+    )]
+    NonInteractivePicker { command: String },
+
+    #[error("nothing to choose from")]
+    #[diagnostic(code(shap::picker::empty))]
+    PickerEmpty,
+
+    #[error("selection cancelled")]
+    #[diagnostic(code(shap::picker::cancelled), help("{detail}"))]
+    PickerFailed { detail: String },
+
     #[error("{command} is not implemented yet")]
     #[diagnostic(code(shap::unimplemented))]
     Unimplemented { command: &'static str },

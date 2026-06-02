@@ -101,17 +101,17 @@ end-to-end tests `tests/integration/`.
 
 ### Tests for User Story 2
 
-- [ ] T030 [P] [US2] Integration tests: `shap model` rejects a model invalid for the active agent; switching agent resets the model to the new agent's default — in `tests/integration/selection.rs`
-- [ ] T031 [P] [US2] Unit test: picker resolution priority (fzf → skim → builtin) in `crates/shap-core/src/picker.rs`
+- [x] T030 [P] [US2] Integration tests: `shap model` rejects a model invalid for the active agent; switching agent resets the model to the new agent's default — in `tests/integration/selection.rs`
+- [x] T031 [P] [US2] Unit test: picker resolution priority (fzf → skim → builtin) in `crates/shap-core/src/picker.rs`
 
 ### Implementation for User Story 2
 
-- [ ] T032 [P] [US2] Implement picker resolution + selection (`which` detection, external fzf/skim, `dialoguer` fallback, non-interactive guidance) in `crates/shap-core/src/picker.rs` (depends on T007)
-- [ ] T033 [US2] Implement the `agent` handler (set or picker; reset `active_model` to default when invalid for the new agent) in `crates/shap-core/src/commands.rs` (depends on T032, T009, T010)
-- [ ] T034 [US2] Implement the `model` handler (offer/set only the active agent's models) in `crates/shap-core/src/commands.rs` (depends on T032, T010)
-- [ ] T035 [US2] Implement the `reasoning` handler with `:effort` as an exact alias in `crates/shap-core/src/commands.rs` (depends on T032, T010)
-- [ ] T036 [P] [US2] Implement the prompt-segment string builder reading `state.json` directly (cheap, no subprocess) in `crates/shap-shell/src/prompt.rs` (depends on T010)
-- [ ] T037 [US2] Add Zsh `:agent`/`:model`/`:reasoning`/`:effort` mappings and the optional prompt-segment hook (gated by `show_prompt_segment`) in `shell/zsh/shap.zsh` (depends on T033, T034, T035, T036)
+- [x] T032 [P] [US2] Implement picker resolution + selection (`which` detection, external fzf/skim, `dialoguer` fallback, non-interactive guidance) in `crates/shap-core/src/picker.rs` (depends on T007)
+- [x] T033 [US2] Implement the `agent` handler (set or picker; reset `active_model` to default when invalid for the new agent) in `crates/shap-core/src/commands.rs` (depends on T032, T009, T010)
+- [x] T034 [US2] Implement the `model` handler (offer/set only the active agent's models) in `crates/shap-core/src/commands.rs` (depends on T032, T010)
+- [x] T035 [US2] Implement the `reasoning` handler with `:effort` as an exact alias in `crates/shap-core/src/commands.rs` (depends on T032, T010)
+- [x] T036 [P] [US2] Implement the prompt-segment string builder reading `state.json` directly (cheap, no subprocess) in `crates/shap-shell/src/prompt.rs` (depends on T010)
+- [x] T037 [US2] Add Zsh `:agent`/`:model`/`:reasoning`/`:effort` mappings and the optional prompt-segment hook (gated by `show_prompt_segment`) in `shell/zsh/shap.zsh` (depends on T033, T034, T035, T036)
 
 **Checkpoint**: US1 + US2 work independently — selectable agents/models/reasoning with prompt segment.
 

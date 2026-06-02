@@ -36,15 +36,16 @@ async fn dispatch(args: Cli) -> Result<(), Error> {
     } = args;
     match command {
         Command::Send { prompt } => app::send(config, cwd, &prompt).await,
-        Command::Agent { .. } => Err(unimplemented("agent")),
-        Command::Model { .. } => Err(unimplemented("model")),
-        Command::Reasoning { .. } => Err(unimplemented("reasoning")),
+        Command::Agent { name, picker } => app::set_agent(config, cwd, name, picker),
+        Command::Model { name, picker } => app::set_model(config, cwd, name, picker),
+        Command::Reasoning { level, picker } => app::set_reasoning(config, cwd, level, picker),
         Command::New => Err(unimplemented("new")),
         Command::Status { .. } => Err(unimplemented("status")),
         Command::Commit { .. } => Err(unimplemented("commit")),
         Command::Run { .. } => Err(unimplemented("run")),
         Command::Read { .. } => Err(unimplemented("read")),
         Command::Doctor { .. } => Err(unimplemented("doctor")),
+        Command::PromptSegment => app::prompt_segment(config),
     }
 }
 

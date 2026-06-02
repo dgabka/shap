@@ -90,4 +90,10 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
+
+    /// Print the prompt segment from cached state (used by the shell hook).
+    ///
+    /// Cheap by design: reads only state.json, never the config or an agent.
+    #[command(hide = true)]
+    PromptSegment,
 }

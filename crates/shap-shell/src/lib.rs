@@ -3,4 +3,5 @@
 //! Intentionally the smallest crate. Holds only output rendering and the
 //! prompt-segment builder shared by the binary and future shells.
 
+pub mod prompt;
 pub mod render;

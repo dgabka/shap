@@ -11,6 +11,7 @@ pub mod config;
 pub mod error;
 pub mod files;
 pub mod paths;
+pub mod picker;
 pub mod prompt;
 pub mod session;
 pub mod state;

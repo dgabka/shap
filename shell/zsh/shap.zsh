@@ -48,3 +48,20 @@ _shap_accept_line() {
   zle .accept-line
 }
 zle -N accept-line _shap_accept_line
+
+# --- prompt segment ----------------------------------------------------------
+# A precmd hook caches the segment in ${SHAP_PROMPT_INFO} once per prompt (not
+# per redraw). Add ${SHAP_PROMPT_INFO} to your PROMPT or RPROMPT to show it.
+# Disable with `export SHAP_PROMPT_SEGMENT=0`. The `prompt-segment` subcommand
+# reads only state.json, so this stays cheap.
+typeset -g SHAP_PROMPT_INFO=""
+
+_shap_prompt_precmd() {
+  if [[ ${SHAP_PROMPT_SEGMENT:-1} == 1 ]]; then
+    SHAP_PROMPT_INFO="$(command "${SHAP_BIN}" prompt-segment 2>/dev/null)"
+  else
+    SHAP_PROMPT_INFO=""
+  fi
+}
+
+autoload -Uz add-zsh-hook 2>/dev/null && add-zsh-hook precmd _shap_prompt_precmd

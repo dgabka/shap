@@ -9,11 +9,102 @@
 use std::path::Path;
 
 use crate::agent::{AgentClient, AgentRequest, ChunkSink, SessionOptions};
-use crate::config::FileOptions;
-use crate::error::Result;
+use crate::config::{Config, FileOptions};
+use crate::error::{Error, Result};
+use crate::picker::{self, PickerKind};
 use crate::session::Session;
 use crate::state::ActiveState;
 use crate::{files, prompt};
+
+/// Supported reasoning levels (MVP default set).
+pub const REASONING_LEVELS: [&str; 3] = ["low", "medium", "high"];
+
+/// Set the active agent (`shap agent`). With no name (or `force_picker`), opens
+/// a picker over the configured agents. On switch, the active model is reset to
+/// the new agent's `default_model` if the current model is invalid for it.
+pub fn set_agent(
+    config: &Config,
+    state: &mut ActiveState,
+    name: Option<String>,
+    force_picker: bool,
+    picker_kind: PickerKind,
+) -> Result<String> {
+    let chosen = match name {
+        Some(n) if !force_picker => n,
+        _ => picker::select(picker_kind, "agent", &config.agent_names())?,
+    };
+    let agent = config.agent(&chosen).ok_or_else(|| Error::UnknownAgent {
+        name: chosen.clone(),
+        configured: config.agent_names().join(", "),
+    })?;
+
+    state.active_agent = Some(chosen.clone());
+    let keep_model = state
+        .active_model
+        .as_ref()
+        .is_some_and(|m| agent.models.contains(m));
+    if !keep_model {
+        state.active_model = Some(agent.default_model.clone());
+    }
+    Ok(chosen)
+}
+
+/// Set the active model (`shap model`). Offers/sets only the active agent's
+/// models (the active agent falls back to `default_agent`).
+pub fn set_model(
+    config: &Config,
+    state: &mut ActiveState,
+    name: Option<String>,
+    force_picker: bool,
+    picker_kind: PickerKind,
+) -> Result<String> {
+    let agent_name = state
+        .active_agent
+        .clone()
+        .unwrap_or_else(|| config.default_agent.clone());
+    let agent = config
+        .agent(&agent_name)
+        .ok_or_else(|| Error::UnknownAgent {
+            name: agent_name.clone(),
+            configured: config.agent_names().join(", "),
+        })?;
+
+    let chosen = match name {
+        Some(n) if !force_picker => n,
+        _ => picker::select(picker_kind, "model", &agent.models)?,
+    };
+    if !agent.models.contains(&chosen) {
+        return Err(Error::ModelNotForAgent {
+            model: chosen,
+            agent: agent_name,
+            models: agent.models.join(", "),
+        });
+    }
+    state.active_model = Some(chosen.clone());
+    Ok(chosen)
+}
+
+/// Set the reasoning effort (`shap reasoning` / `:effort`).
+pub fn set_reasoning(
+    state: &mut ActiveState,
+    level: Option<String>,
+    force_picker: bool,
+    picker_kind: PickerKind,
+) -> Result<String> {
+    let levels: Vec<String> = REASONING_LEVELS.iter().map(|s| s.to_string()).collect();
+    let chosen = match level {
+        Some(l) if !force_picker => l,
+        _ => picker::select(picker_kind, "reasoning", &levels)?,
+    };
+    if !REASONING_LEVELS.contains(&chosen.as_str()) {
+        return Err(Error::InvalidReasoning {
+            level: chosen,
+            valid: REASONING_LEVELS.join(", "),
+        });
+    }
+    state.active_reasoning = Some(chosen.clone());
+    Ok(chosen)
+}
 
 /// Result of a successful [`send`].
 #[derive(Debug, Clone)]
@@ -273,5 +364,110 @@ mod tests {
             first.session_id, second.session_id,
             "follow-up reuses the session"
         );
+    }
+
+    fn config() -> Config {
+        toml::from_str(
+            r#"
+default_agent = "codex"
+[agents.codex]
+command = "codex-acp"
+models = ["gpt-5", "gpt-5-thinking"]
+default_model = "gpt-5-thinking"
+[agents.claude]
+command = "claude-agent-acp"
+models = ["sonnet", "opus"]
+default_model = "sonnet"
+"#,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn set_agent_resets_invalid_model_to_default() {
+        let cfg = config();
+        let mut state = ActiveState {
+            active_agent: Some("codex".into()),
+            active_model: Some("gpt-5".into()),
+            ..Default::default()
+        };
+        // Switch to claude: gpt-5 is invalid there → reset to claude's default.
+        set_agent(
+            &cfg,
+            &mut state,
+            Some("claude".into()),
+            false,
+            PickerKind::Builtin,
+        )
+        .unwrap();
+        assert_eq!(state.active_agent.as_deref(), Some("claude"));
+        assert_eq!(state.active_model.as_deref(), Some("sonnet"));
+    }
+
+    #[test]
+    fn set_agent_keeps_valid_model() {
+        let cfg = config();
+        let mut state = ActiveState {
+            active_agent: Some("claude".into()),
+            active_model: Some("opus".into()),
+            ..Default::default()
+        };
+        // claude → claude, opus still valid → keep it.
+        set_agent(
+            &cfg,
+            &mut state,
+            Some("claude".into()),
+            false,
+            PickerKind::Builtin,
+        )
+        .unwrap();
+        assert_eq!(state.active_model.as_deref(), Some("opus"));
+    }
+
+    #[test]
+    fn set_model_rejects_invalid_for_active_agent() {
+        let cfg = config();
+        let mut state = ActiveState {
+            active_agent: Some("codex".into()),
+            ..Default::default()
+        };
+        let err = set_model(
+            &cfg,
+            &mut state,
+            Some("sonnet".into()),
+            false,
+            PickerKind::Builtin,
+        )
+        .unwrap_err();
+        assert!(matches!(err, Error::ModelNotForAgent { .. }), "{err:?}");
+    }
+
+    #[test]
+    fn set_model_accepts_valid() {
+        let cfg = config();
+        let mut state = ActiveState {
+            active_agent: Some("codex".into()),
+            ..Default::default()
+        };
+        set_model(
+            &cfg,
+            &mut state,
+            Some("gpt-5".into()),
+            false,
+            PickerKind::Builtin,
+        )
+        .unwrap();
+        assert_eq!(state.active_model.as_deref(), Some("gpt-5"));
+    }
+
+    #[test]
+    fn set_reasoning_validates_level() {
+        let mut state = ActiveState::default();
+        set_reasoning(&mut state, Some("high".into()), false, PickerKind::Builtin).unwrap();
+        assert_eq!(state.active_reasoning.as_deref(), Some("high"));
+
+        let err = set_reasoning(&mut state, Some("ultra".into()), false, PickerKind::Builtin)
+            .unwrap_err();
+        assert!(matches!(err, Error::InvalidReasoning { .. }), "{err:?}");
     }
 }

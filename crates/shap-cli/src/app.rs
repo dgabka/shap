@@ -8,7 +8,7 @@ use shap_agent::registry::Registry;
 use shap_core::config::Config;
 use shap_core::paths::{EnvVars, Paths};
 use shap_core::state::ActiveState;
-use shap_core::{Error, commands};
+use shap_core::{Error, commands, picker};
 use shap_shell::render::Renderer;
 
 /// Loaded runtime context shared by handlers.
@@ -82,5 +82,61 @@ pub async fn send(
     let outcome = result?;
     renderer.finish(&outcome.response);
     let _ = ctx.state.save(&state_path);
+    Ok(())
+}
+
+/// `shap agent` — select the active agent (resets the model if it becomes
+/// invalid for the new agent).
+pub fn set_agent(
+    config_override: Option<PathBuf>,
+    cwd_override: Option<PathBuf>,
+    name: Option<String>,
+    force_picker: bool,
+) -> Result<(), Error> {
+    let mut ctx = Context::load(config_override, cwd_override)?;
+    let kind = picker::resolve_from_path(ctx.config.ui.picker);
+    let chosen = commands::set_agent(&ctx.config, &mut ctx.state, name, force_picker, kind)?;
+    ctx.state.save(&ctx.paths.state())?;
+    println!("agent: {chosen}");
+    Ok(())
+}
+
+/// `shap model` — select the active agent's model.
+pub fn set_model(
+    config_override: Option<PathBuf>,
+    cwd_override: Option<PathBuf>,
+    name: Option<String>,
+    force_picker: bool,
+) -> Result<(), Error> {
+    let mut ctx = Context::load(config_override, cwd_override)?;
+    let kind = picker::resolve_from_path(ctx.config.ui.picker);
+    let chosen = commands::set_model(&ctx.config, &mut ctx.state, name, force_picker, kind)?;
+    ctx.state.save(&ctx.paths.state())?;
+    println!("model: {chosen}");
+    Ok(())
+}
+
+/// `shap reasoning` / `:effort` — select the reasoning effort.
+pub fn set_reasoning(
+    config_override: Option<PathBuf>,
+    cwd_override: Option<PathBuf>,
+    level: Option<String>,
+    force_picker: bool,
+) -> Result<(), Error> {
+    let mut ctx = Context::load(config_override, cwd_override)?;
+    let kind = picker::resolve_from_path(ctx.config.ui.picker);
+    let chosen = commands::set_reasoning(&mut ctx.state, level, force_picker, kind)?;
+    ctx.state.save(&ctx.paths.state())?;
+    println!("reasoning: {chosen}");
+    Ok(())
+}
+
+/// `shap prompt-segment` — print the cached prompt segment. Reads only
+/// state.json (no config, no agent) so the shell hook stays cheap.
+pub fn prompt_segment(config_override: Option<PathBuf>) -> Result<(), Error> {
+    let env = EnvVars::from_process();
+    let paths = Paths::resolve(&env, config_override);
+    let state = ActiveState::load(&paths.state())?;
+    print!("{}", shap_shell::prompt::segment(&state));
     Ok(())
 }
