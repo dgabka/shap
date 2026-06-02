@@ -21,7 +21,7 @@ use crate::picker::{self, PickerKind};
 use crate::prompt::CapturedContext;
 use crate::session::Session;
 use crate::state::ActiveState;
-use crate::{files, prompt};
+use crate::{files, git, prompt};
 
 /// Supported reasoning levels (MVP default set).
 pub const REASONING_LEVELS: [&str; 3] = ["low", "medium", "high"];
@@ -324,6 +324,61 @@ pub async fn run(cwd: &Path, argv: &[String]) -> Result<CommandRun> {
         exit_code: status.code().unwrap_or(-1),
         output: String::from_utf8_lossy(&bytes).into_owned(),
     })
+}
+
+/// Handle `shap commit --prefill-shell-buffer`: build a commit message from the
+/// diff and return the `git commit -am "<message>"` line for the shell to
+/// insert. **Never executes `git commit`** (FR-020, SC-003).
+///
+/// Returns `Ok(None)` when there is nothing to commit (caller prints a note,
+/// exit 0); `Err(NotAGitRepo)` outside a repo (exit 1). Prefers the staged diff,
+/// falling back to the unstaged diff.
+pub async fn commit(
+    opts: &SessionOptions,
+    client: &dyn AgentClient,
+    on_chunk: &mut ChunkSink<'_>,
+) -> Result<Option<String>> {
+    let cwd = &opts.cwd;
+    if !git::is_repo(cwd)? {
+        return Err(Error::NotAGitRepo);
+    }
+
+    let staged = git::diff(cwd, true)?;
+    let diff = if !staged.trim().is_empty() {
+        staged
+    } else {
+        let unstaged = git::diff(cwd, false)?;
+        if unstaged.trim().is_empty() {
+            return Ok(None);
+        }
+        unstaged
+    };
+
+    let branch = git::branch(cwd)?;
+    let status = git::status_short(cwd)?;
+    let composed = prompt::compose_commit(&branch, &status, &diff);
+
+    let message = client
+        .run_prompt(opts, &AgentRequest { prompt: composed }, on_chunk)
+        .await?
+        .text;
+
+    Ok(Some(format!(
+        "git commit -am \"{}\"",
+        escape_double_quoted(message.trim())
+    )))
+}
+
+/// Escape a string for safe inclusion inside a double-quoted shell word.
+fn escape_double_quoted(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        if matches!(c, '\\' | '"' | '`' | '$') {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
 }
 
 /// Copy a child stream to our terminal live while appending it to `sink`.
@@ -740,5 +795,111 @@ default_model = "sonnet"
             )),
             "user_prompt records the captured output reference"
         );
+    }
+
+    fn git(dir: &Path, args: &[&str]) {
+        let ok = std::process::Command::new("git")
+            .current_dir(dir)
+            .args(args)
+            .output()
+            .unwrap()
+            .status
+            .success();
+        assert!(ok, "git {args:?} failed");
+    }
+
+    #[tokio::test]
+    async fn commit_returns_line_and_never_runs_git() {
+        let dir = tempdir().unwrap();
+        git(dir.path(), &["init", "-q"]);
+        git(dir.path(), &["config", "user.email", "t@t.t"]);
+        git(dir.path(), &["config", "user.name", "t"]);
+        std::fs::write(dir.path().join("f.txt"), "hello\n").unwrap();
+        git(dir.path(), &["add", "f.txt"]);
+
+        struct Msg;
+        #[async_trait]
+        impl AgentClient for Msg {
+            async fn run_prompt(
+                &self,
+                _opts: &SessionOptions,
+                request: &AgentRequest,
+                _on_chunk: &mut ChunkSink<'_>,
+            ) -> Result<AgentResponse> {
+                assert!(request.prompt.contains("Diff:"), "diff is in the prompt");
+                Ok(AgentResponse {
+                    text: "feat: add f".into(),
+                })
+            }
+        }
+
+        let mut noop = |_: &str| {};
+        let line = commit(&opts(dir.path().to_path_buf()), &Msg, &mut noop)
+            .await
+            .unwrap()
+            .expect("a commit line");
+        assert_eq!(line, "git commit -am \"feat: add f\"");
+
+        // Critical: `:commit` must never create a commit (FR-020, SC-003).
+        let log = std::process::Command::new("git")
+            .current_dir(dir.path())
+            .args(["rev-list", "--count", "--all"])
+            .output()
+            .unwrap();
+        let count = String::from_utf8_lossy(&log.stdout).trim().to_string();
+        assert_eq!(count, "0", "no commit was created");
+    }
+
+    #[tokio::test]
+    async fn commit_outside_repo_errors() {
+        let dir = tempdir().unwrap();
+        struct Never;
+        #[async_trait]
+        impl AgentClient for Never {
+            async fn run_prompt(
+                &self,
+                _o: &SessionOptions,
+                _r: &AgentRequest,
+                _c: &mut ChunkSink<'_>,
+            ) -> Result<AgentResponse> {
+                panic!("agent must not be called outside a repo");
+            }
+        }
+        let mut noop = |_: &str| {};
+        let err = commit(&opts(dir.path().to_path_buf()), &Never, &mut noop)
+            .await
+            .unwrap_err();
+        assert!(matches!(err, Error::NotAGitRepo), "{err:?}");
+    }
+
+    #[tokio::test]
+    async fn commit_escapes_quotes() {
+        let dir = tempdir().unwrap();
+        git(dir.path(), &["init", "-q"]);
+        git(dir.path(), &["config", "user.email", "t@t.t"]);
+        git(dir.path(), &["config", "user.name", "t"]);
+        std::fs::write(dir.path().join("f.txt"), "x\n").unwrap();
+        git(dir.path(), &["add", "f.txt"]);
+
+        struct Q;
+        #[async_trait]
+        impl AgentClient for Q {
+            async fn run_prompt(
+                &self,
+                _o: &SessionOptions,
+                _r: &AgentRequest,
+                _c: &mut ChunkSink<'_>,
+            ) -> Result<AgentResponse> {
+                Ok(AgentResponse {
+                    text: r#"fix: handle "quoted" $var"#.into(),
+                })
+            }
+        }
+        let mut noop = |_: &str| {};
+        let line = commit(&opts(dir.path().to_path_buf()), &Q, &mut noop)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(line, r#"git commit -am "fix: handle \"quoted\" \$var""#);
     }
 }

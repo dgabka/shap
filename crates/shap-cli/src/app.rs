@@ -237,6 +237,26 @@ pub async fn read(
     Ok(())
 }
 
+/// `shap commit --prefill-shell-buffer` — print a `git commit -am "…"` line for
+/// the shell to insert. Never runs `git commit`. Prints nothing on stdout when
+/// there is nothing to commit (a note goes to stderr); exits 0.
+pub async fn commit(
+    config_override: Option<PathBuf>,
+    cwd_override: Option<PathBuf>,
+) -> Result<(), Error> {
+    let ctx = Context::load(config_override, cwd_override)?;
+    let opts = Registry::new(&ctx.config).resolve(&ctx.state, ctx.cwd.clone())?;
+    let client = AcpClient::new();
+    // The generated message must not leak onto stdout (the shell captures only
+    // the final `git commit` line), so chunks are dropped.
+    let mut sink = |_: &str| {};
+    match commands::commit(&opts, &client, &mut sink).await? {
+        Some(line) => println!("{line}"),
+        None => eprintln!("nothing to commit"),
+    }
+    Ok(())
+}
+
 /// `shap prompt-segment` — print the cached prompt segment. Reads only
 /// state.json (no config, no agent) so the shell hook stays cheap.
 pub fn prompt_segment(config_override: Option<PathBuf>) -> Result<(), Error> {

@@ -169,13 +169,13 @@ end-to-end tests `tests/integration/`.
 
 ### Tests for User Story 5
 
-- [ ] T050 [P] [US5] Snapshot + behavior tests: `:commit` prompt composition (prefers staged diff, includes branch/status) and assertion that `git commit` is never executed — in `tests/integration/commit.rs`
+- [x] T050 [P] [US5] Snapshot + behavior tests: `:commit` prompt composition (prefers staged diff, includes branch/status) and assertion that `git commit` is never executed — in `tests/integration/commit.rs`
 
 ### Implementation for User Story 5
 
-- [ ] T051 [P] [US5] Implement Git CLI helpers (`status --short`, `diff --staged`, `diff`, `branch --show-current`) in `crates/shap-core/src/git.rs` (depends on T007)
-- [ ] T052 [US5] Implement the `commit --prefill-shell-buffer` handler (choose staged-else-unstaged diff, build agent prompt, get message, print `git commit -am "<message>"`; handle not-a-repo and nothing-to-commit) in `crates/shap-core/src/commands.rs` (depends on T051, T027, T025)
-- [ ] T053 [US5] Implement the Zsh ZLE widget that inserts the generated command into the buffer (never executes) and bind `:commit` to it in `shell/zsh/shap.zsh` (depends on T052)
+- [x] T051 [P] [US5] Implement Git CLI helpers (`status --short`, `diff --staged`, `diff`, `branch --show-current`) in `crates/shap-core/src/git.rs` (depends on T007)
+- [x] T052 [US5] Implement the `commit --prefill-shell-buffer` handler (choose staged-else-unstaged diff, build agent prompt, get message, print `git commit -am "<message>"`; handle not-a-repo and nothing-to-commit) in `crates/shap-core/src/commands.rs` (depends on T051, T027, T025)
+- [x] T053 [US5] Implement the Zsh ZLE widget that inserts the generated command into the buffer (never executes) and bind `:commit` to it in `shell/zsh/shap.zsh` (depends on T052)
 
 **Checkpoint**: US1–US5 work independently — commit-message assist with user control preserved.
 

@@ -30,15 +30,30 @@ function :status    { command "${SHAP_BIN}" status    "$@" --cwd "${PWD}" }
 function :doctor    { command "${SHAP_BIN}" doctor    "$@" --cwd "${PWD}" }
 function :run       { command "${SHAP_BIN}" run            --cwd "${PWD}" -- "$@" }
 function :read      { command "${SHAP_BIN}" read "$*"      --cwd "${PWD}" }
-# `:commit` is a ZLE widget that prefills (never runs) a `git commit` line;
-# it is added with User Story 5.
+# `:commit` is handled by the accept-line widget below (it must edit the buffer,
+# which a normal function cannot do).
 
-# --- bare `: <prompt>` chat ---------------------------------------------------
-# An accept-line widget that triggers ONLY on a leading colon-space, so normal
-# use of the `:` builtin (e.g. `: ${VAR:=x}`) is untouched. It rewrites the
-# buffer to a `shap send` invocation and runs it like any other command.
+# --- accept-line widget -------------------------------------------------------
+# Handles two leading-colon cases without disturbing the `:` builtin:
+#   `:commit`  → replace the buffer with the generated `git commit` line for
+#                review (NEVER executed automatically — Constitution VII).
+#   `: <text>` → run `shap send <text>` (colon-space only, so `: ${x:=y}` and
+#                other `:` builtin uses are untouched).
 _shap_accept_line() {
   emulate -L zsh
+  if [[ ${BUFFER} == ':commit' || ${BUFFER} == ': commit' ]]; then
+    local out
+    out="$(command "${SHAP_BIN}" commit --prefill-shell-buffer --cwd "${PWD}" 2>&1)"
+    if [[ ${out} == git\ commit* ]]; then
+      BUFFER=${out}
+      CURSOR=${#BUFFER}
+      zle redisplay
+    else
+      zle -M -- "${out:-shap: could not generate a commit message}"
+      BUFFER=""
+    fi
+    return 0
+  fi
   if [[ ${BUFFER} == ': '* ]]; then
     local prompt=${BUFFER#: }
     if [[ -n ${prompt//[[:space:]]/} ]]; then

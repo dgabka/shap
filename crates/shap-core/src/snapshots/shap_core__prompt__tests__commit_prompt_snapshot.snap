@@ -1,0 +1,14 @@
+---
+source: crates/shap-core/src/prompt.rs
+expression: out
+---
+Write a single concise Git commit message (Conventional Commits style) for the following staged changes. Reply with only the commit message — no explanation, no code fences.
+
+Branch: main
+
+Status:
+ M src/lib.rs
+
+Diff:
+diff --git a/src/lib.rs b/src/lib.rs
++// new line

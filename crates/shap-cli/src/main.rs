@@ -44,7 +44,7 @@ async fn dispatch(args: Cli) -> Result<i32, Error> {
         }
         Command::New => app::new_session(config, cwd).map(ok),
         Command::Status { json } => app::status(config, cwd, json).map(ok),
-        Command::Commit { .. } => Err(unimplemented("commit")),
+        Command::Commit { .. } => app::commit(config, cwd).await.map(ok),
         Command::Run { command } => app::run(config, cwd, &command).await,
         Command::Read { prompt } => app::read(config, cwd, prompt).await.map(ok),
         Command::Doctor { .. } => Err(unimplemented("doctor")),

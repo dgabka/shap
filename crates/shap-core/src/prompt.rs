@@ -37,6 +37,16 @@ pub struct CapturedContext<'a> {
     pub truncated: bool,
 }
 
+/// Compose the `:commit` prompt: ask the agent for a commit message given the
+/// branch, short status, and diff. Snapshot-tested.
+pub fn compose_commit(branch: &str, status: &str, diff: &str) -> String {
+    format!(
+        "Write a single concise Git commit message (Conventional Commits style) \
+for the following staged changes. Reply with only the commit message — no \
+explanation, no code fences.\n\nBranch: {branch}\n\nStatus:\n{status}\n\nDiff:\n{diff}"
+    )
+}
+
 /// Compose the `:read` payload (contract: `contracts/cli-commands.md`).
 pub fn compose_read(user_prompt: &str, captured: &CapturedContext<'_>) -> String {
     let exit = match captured.exit_code {
@@ -102,5 +112,15 @@ mod tests {
             truncated: true,
         };
         insta::assert_snapshot!(compose_read("what broke?", &ctx));
+    }
+
+    #[test]
+    fn commit_prompt_snapshot() {
+        let out = compose_commit(
+            "main",
+            " M src/lib.rs",
+            "diff --git a/src/lib.rs b/src/lib.rs\n+// new line",
+        );
+        insta::assert_snapshot!(out);
     }
 }
