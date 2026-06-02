@@ -147,15 +147,15 @@ end-to-end tests `tests/integration/`.
 
 ### Tests for User Story 4
 
-- [ ] T044 [P] [US4] Integration tests: `:run` captures output, `:read` includes it, and pipe mode works — in `tests/integration/capture.rs`
-- [ ] T045 [P] [US4] Snapshot test: `:read` prompt-payload composition (user prompt + command + exit code + output) via `insta` in `crates/shap-core/src/prompt.rs`
+- [x] T044 [P] [US4] Integration tests: `:run` captures output, `:read` includes it, and pipe mode works — in `tests/integration/capture.rs`
+- [x] T045 [P] [US4] Snapshot test: `:read` prompt-payload composition (user prompt + command + exit code + output) via `insta` in `crates/shap-core/src/prompt.rs`
 
 ### Implementation for User Story 4
 
-- [ ] T046 [P] [US4] Implement the captured-output store (write/read, truncate to `max_output_bytes` with a flag, command/exit-code/timestamp metadata) in `crates/shap-core/src/output_capture.rs` (depends on T006, T009)
-- [ ] T047 [US4] Implement the `run` handler (split argv via `shell-words`, spawn under tokio, stream stdout+stderr live, capture combined output and exit code) in `crates/shap-core/src/commands.rs` (depends on T046)
-- [ ] T048 [US4] Implement the `read` handler (load latest capture or read stdin in pipe mode, compose payload, send like `send`) in `crates/shap-core/src/commands.rs` (depends on T046, T025, T027)
-- [ ] T049 [US4] Add Zsh `:run`/`:read` mappings in `shell/zsh/shap.zsh` (depends on T047, T048)
+- [x] T046 [P] [US4] Implement the captured-output store (write/read, truncate to `max_output_bytes` with a flag, command/exit-code/timestamp metadata) in `crates/shap-core/src/output_capture.rs` (depends on T006, T009)
+- [x] T047 [US4] Implement the `run` handler (split argv via `shell-words`, spawn under tokio, stream stdout+stderr live, capture combined output and exit code) in `crates/shap-core/src/commands.rs` (depends on T046)
+- [x] T048 [US4] Implement the `read` handler (load latest capture or read stdin in pipe mode, compose payload, send like `send`) in `crates/shap-core/src/commands.rs` (depends on T046, T025, T027)
+- [x] T049 [US4] Add Zsh `:run`/`:read` mappings in `shell/zsh/shap.zsh` (depends on T047, T048)
 
 **Checkpoint**: US1–US4 work independently — command output flows to the agent.
 

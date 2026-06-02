@@ -7,11 +7,18 @@
 //! this crate free of any ACP/shell dependency.
 
 use std::path::Path;
+use std::process::Stdio;
+use std::sync::{Arc, Mutex};
+
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::process::Command;
 
 use crate::agent::{AgentClient, AgentRequest, ChunkSink, SessionOptions};
 use crate::config::{Config, FileOptions};
 use crate::error::{Error, Result};
+use crate::files::Attachment;
 use crate::picker::{self, PickerKind};
+use crate::prompt::CapturedContext;
 use crate::session::Session;
 use crate::state::ActiveState;
 use crate::{files, prompt};
@@ -164,24 +171,21 @@ pub struct SendOutcome {
     pub session_id: String,
 }
 
-/// Handle `shap send`: expand `@file` refs, ensure/continue a session, send the
-/// prompt to the agent (streaming via `on_chunk`), and log the exchange.
-///
-/// `state` is mutated in place (active session + last cwd); the caller persists
-/// it. A mid-flight agent failure is recorded as an `error` session record
-/// before the error propagates.
-pub async fn send(
+/// Continue/create a session, log the exchange, and run one agent turn. Shared
+/// by `send` and `read`. `state` is mutated (active session + last cwd); the
+/// caller persists it. A mid-flight failure is recorded as an `error` record.
+#[allow(clippy::too_many_arguments)]
+async fn dispatch_prompt(
     opts: &SessionOptions,
-    file_opts: &FileOptions,
     sessions_dir: &Path,
     state: &mut ActiveState,
-    prompt_text: &str,
+    raw_prompt: &str,
+    composed: String,
+    attachments: Vec<Attachment>,
+    captured_output_ref: Option<String>,
     client: &dyn AgentClient,
     on_chunk: &mut ChunkSink<'_>,
 ) -> Result<SendOutcome> {
-    let resolved = files::resolve(prompt_text, &opts.cwd, file_opts)?;
-    let composed = prompt::compose_send(prompt_text, &resolved.blocks);
-
     // Continue the active session if it still exists, else start a fresh one.
     let session = match &state.active_session_id {
         Some(id) if Session::at(sessions_dir, id).exists() => Session::at(sessions_dir, id),
@@ -191,7 +195,7 @@ pub async fn send(
     state.last_cwd = Some(opts.cwd.to_string_lossy().into_owned());
 
     let cwd = opts.cwd.to_string_lossy().into_owned();
-    session.log_user_prompt(prompt_text, &cwd, resolved.attachments, None)?;
+    session.log_user_prompt(raw_prompt, &cwd, attachments, captured_output_ref)?;
 
     let request = AgentRequest { prompt: composed };
     let response = match client.run_prompt(opts, &request, on_chunk).await {
@@ -207,6 +211,146 @@ pub async fn send(
         response: response.text,
         session_id: session.id().to_string(),
     })
+}
+
+/// Handle `shap send`: expand `@file` refs, then dispatch the prompt.
+pub async fn send(
+    opts: &SessionOptions,
+    file_opts: &FileOptions,
+    sessions_dir: &Path,
+    state: &mut ActiveState,
+    prompt_text: &str,
+    client: &dyn AgentClient,
+    on_chunk: &mut ChunkSink<'_>,
+) -> Result<SendOutcome> {
+    let resolved = files::resolve(prompt_text, &opts.cwd, file_opts)?;
+    let composed = prompt::compose_send(prompt_text, &resolved.blocks);
+    dispatch_prompt(
+        opts,
+        sessions_dir,
+        state,
+        prompt_text,
+        composed,
+        resolved.attachments,
+        None,
+        client,
+        on_chunk,
+    )
+    .await
+}
+
+/// Handle `shap read`: compose the prompt + captured command output, then
+/// dispatch it (the captured output is recorded as `captured_output_ref`).
+#[allow(clippy::too_many_arguments)]
+pub async fn read(
+    opts: &SessionOptions,
+    sessions_dir: &Path,
+    state: &mut ActiveState,
+    command: &str,
+    exit_code: Option<i32>,
+    output: &str,
+    truncated: bool,
+    prompt_text: &str,
+    client: &dyn AgentClient,
+    on_chunk: &mut ChunkSink<'_>,
+) -> Result<SendOutcome> {
+    let captured = CapturedContext {
+        command,
+        exit_code,
+        output,
+        truncated,
+    };
+    let composed = prompt::compose_read(prompt_text, &captured);
+    dispatch_prompt(
+        opts,
+        sessions_dir,
+        state,
+        prompt_text,
+        composed,
+        vec![],
+        Some(command.to_string()),
+        client,
+        on_chunk,
+    )
+    .await
+}
+
+/// Outcome of running a command under `shap run`.
+#[derive(Debug, Clone)]
+pub struct CommandRun {
+    pub exit_code: i32,
+    pub output: String,
+}
+
+/// Handle `shap run`: execute `argv` under Tokio, streaming combined
+/// stdout+stderr to the terminal live while capturing it for `:read`.
+pub async fn run(cwd: &Path, argv: &[String]) -> Result<CommandRun> {
+    let (program, args) = argv
+        .split_first()
+        .ok_or_else(|| Error::AgentProtocol("no command to run".to_string()))?;
+
+    let mut child = Command::new(program)
+        .args(args)
+        .current_dir(cwd)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| Error::io(format!("running `{program}`"), e))?;
+
+    let stdout = child.stdout.take();
+    let stderr = child.stderr.take();
+    let sink = Arc::new(Mutex::new(Vec::<u8>::new()));
+
+    let mut readers = Vec::new();
+    if let Some(out) = stdout {
+        readers.push(tokio::spawn(tee(out, false, sink.clone())));
+    }
+    if let Some(err) = stderr {
+        readers.push(tokio::spawn(tee(err, true, sink.clone())));
+    }
+
+    let status = child
+        .wait()
+        .await
+        .map_err(|e| Error::io("waiting for command", e))?;
+    for r in readers {
+        let _ = r.await;
+    }
+
+    let bytes = Arc::try_unwrap(sink)
+        .map(|m| m.into_inner().unwrap_or_default())
+        .unwrap_or_default();
+    Ok(CommandRun {
+        exit_code: status.code().unwrap_or(-1),
+        output: String::from_utf8_lossy(&bytes).into_owned(),
+    })
+}
+
+/// Copy a child stream to our terminal live while appending it to `sink`.
+async fn tee<R>(mut reader: R, to_stderr: bool, sink: Arc<Mutex<Vec<u8>>>)
+where
+    R: AsyncReadExt + Unpin,
+{
+    let mut buf = [0u8; 8192];
+    loop {
+        let n = match reader.read(&mut buf).await {
+            Ok(0) | Err(_) => break,
+            Ok(n) => n,
+        };
+        let chunk = &buf[..n];
+        if to_stderr {
+            let mut w = tokio::io::stderr();
+            let _ = w.write_all(chunk).await;
+            let _ = w.flush().await;
+        } else {
+            let mut w = tokio::io::stdout();
+            let _ = w.write_all(chunk).await;
+            let _ = w.flush().await;
+        }
+        if let Ok(mut s) = sink.lock() {
+            s.extend_from_slice(chunk);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -520,5 +664,81 @@ default_model = "sonnet"
         let err = set_reasoning(&mut state, Some("ultra".into()), false, PickerKind::Builtin)
             .unwrap_err();
         assert!(matches!(err, Error::InvalidReasoning { .. }), "{err:?}");
+    }
+
+    #[tokio::test]
+    async fn run_captures_output_and_exit_code() {
+        let dir = tempdir().unwrap();
+        let argv = vec![
+            "sh".to_string(),
+            "-c".to_string(),
+            "printf hello".to_string(),
+        ];
+        let result = run(dir.path(), &argv).await.unwrap();
+        assert_eq!(result.exit_code, 0);
+        assert_eq!(result.output, "hello");
+    }
+
+    #[tokio::test]
+    async fn run_reports_nonzero_exit() {
+        let dir = tempdir().unwrap();
+        let argv = vec!["sh".to_string(), "-c".to_string(), "exit 3".to_string()];
+        let result = run(dir.path(), &argv).await.unwrap();
+        assert_eq!(result.exit_code, 3);
+    }
+
+    #[tokio::test]
+    async fn read_composes_payload_and_marks_capture() {
+        let dir = tempdir().unwrap();
+        let sessions = dir.path().join("sessions");
+        let mut state = ActiveState::default();
+
+        struct Capture;
+        #[async_trait]
+        impl AgentClient for Capture {
+            async fn run_prompt(
+                &self,
+                _opts: &SessionOptions,
+                request: &AgentRequest,
+                _on_chunk: &mut ChunkSink<'_>,
+            ) -> Result<AgentResponse> {
+                assert!(request.prompt.contains("Previous command:"));
+                assert!(request.prompt.contains("error[E0277]"), "output included");
+                Ok(AgentResponse {
+                    text: "fixed".into(),
+                })
+            }
+        }
+
+        let mut noop = |_: &str| {};
+        let out = read(
+            &opts(dir.path().to_path_buf()),
+            &sessions,
+            &mut state,
+            "cargo test",
+            Some(101),
+            "error[E0277]",
+            false,
+            "fix it",
+            &Capture,
+            &mut noop,
+        )
+        .await
+        .unwrap();
+        assert_eq!(out.response, "fixed");
+
+        let records = Session::at(&sessions, &out.session_id)
+            .read_records()
+            .unwrap();
+        assert!(
+            records.iter().any(|r| matches!(
+                r,
+                Record::UserPrompt {
+                    captured_output_ref: Some(_),
+                    ..
+                }
+            )),
+            "user_prompt records the captured output reference"
+        );
     }
 }

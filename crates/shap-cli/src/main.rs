@@ -16,7 +16,7 @@ async fn main() {
     // clap exits with code 2 on usage errors before we get here.
     let args = Cli::parse();
     let code = match dispatch(args).await {
-        Ok(()) => 0,
+        Ok(code) => code,
         Err(err) => {
             let report = miette::Report::new(err);
             eprintln!("{report:?}");
@@ -26,27 +26,35 @@ async fn main() {
     std::process::exit(code);
 }
 
-/// Route a parsed command to its handler. Handlers land per user story; until
-/// then they report a clear "not implemented yet" diagnostic.
-async fn dispatch(args: Cli) -> Result<(), Error> {
+/// Route a parsed command to its handler, returning the process exit code
+/// (handlers other than `run` yield 0 on success; `run` returns the child's
+/// exit code). Handlers land per user story.
+async fn dispatch(args: Cli) -> Result<i32, Error> {
     let Cli {
         cwd,
         config,
         command,
     } = args;
     match command {
-        Command::Send { prompt } => app::send(config, cwd, &prompt).await,
-        Command::Agent { name, picker } => app::set_agent(config, cwd, name, picker),
-        Command::Model { name, picker } => app::set_model(config, cwd, name, picker),
-        Command::Reasoning { level, picker } => app::set_reasoning(config, cwd, level, picker),
-        Command::New => app::new_session(config, cwd),
-        Command::Status { json } => app::status(config, cwd, json),
+        Command::Send { prompt } => app::send(config, cwd, &prompt).await.map(ok),
+        Command::Agent { name, picker } => app::set_agent(config, cwd, name, picker).map(ok),
+        Command::Model { name, picker } => app::set_model(config, cwd, name, picker).map(ok),
+        Command::Reasoning { level, picker } => {
+            app::set_reasoning(config, cwd, level, picker).map(ok)
+        }
+        Command::New => app::new_session(config, cwd).map(ok),
+        Command::Status { json } => app::status(config, cwd, json).map(ok),
         Command::Commit { .. } => Err(unimplemented("commit")),
-        Command::Run { .. } => Err(unimplemented("run")),
-        Command::Read { .. } => Err(unimplemented("read")),
+        Command::Run { command } => app::run(config, cwd, &command).await,
+        Command::Read { prompt } => app::read(config, cwd, prompt).await.map(ok),
         Command::Doctor { .. } => Err(unimplemented("doctor")),
-        Command::PromptSegment => app::prompt_segment(config),
+        Command::PromptSegment => app::prompt_segment(config).map(ok),
     }
+}
+
+/// Map a successful unit result to exit code 0.
+fn ok(_: ()) -> i32 {
+    0
 }
 
 fn unimplemented(command: &'static str) -> Error {

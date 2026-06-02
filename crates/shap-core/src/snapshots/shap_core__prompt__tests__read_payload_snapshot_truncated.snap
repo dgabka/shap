@@ -1,0 +1,17 @@
+---
+source: crates/shap-core/src/prompt.rs
+expression: "compose_read(\"what broke?\", &ctx)"
+---
+User prompt:
+what broke?
+
+Previous command:
+cargo build
+
+Exit code:
+-
+
+Output:
+line1
+line2
+[output truncated]

@@ -1,6 +1,7 @@
 //! Binary-side orchestration: load context and wire core handlers to the real
 //! ACP client + renderer. Kept thin — all product logic lives in `shap-core`.
 
+use std::io::{IsTerminal, Read};
 use std::path::PathBuf;
 
 use shap_agent::AcpClient;
@@ -8,7 +9,7 @@ use shap_agent::registry::Registry;
 use shap_core::config::Config;
 use shap_core::paths::{EnvVars, Paths};
 use shap_core::state::ActiveState;
-use shap_core::{Error, commands, picker};
+use shap_core::{Error, commands, output_capture, picker};
 use shap_shell::render::Renderer;
 
 /// Loaded runtime context shared by handlers.
@@ -161,6 +162,78 @@ pub fn status(
         println!("reasoning: {}", dash(&status.reasoning));
         println!("session:   {}", dash(&status.session_id));
     }
+    Ok(())
+}
+
+/// `shap run -- <cmd...>` — run a command, stream + capture its output for
+/// `:read`, and exit with the child's code.
+pub async fn run(
+    config_override: Option<PathBuf>,
+    cwd_override: Option<PathBuf>,
+    argv: &[String],
+) -> Result<i32, Error> {
+    let ctx = Context::load(config_override, cwd_override)?;
+    let result = commands::run(&ctx.cwd, argv).await?;
+    let _ = output_capture::save(
+        &ctx.paths.capture_output(),
+        &ctx.paths.capture_meta(),
+        &argv.join(" "),
+        Some(result.exit_code),
+        &result.output,
+        ctx.config.history.max_output_bytes,
+    );
+    Ok(result.exit_code)
+}
+
+/// `shap read <prompt>` — send the prompt plus the last captured output (or
+/// piped stdin) to the agent.
+pub async fn read(
+    config_override: Option<PathBuf>,
+    cwd_override: Option<PathBuf>,
+    prompt: Option<String>,
+) -> Result<(), Error> {
+    let mut ctx = Context::load(config_override, cwd_override)?;
+    let opts = Registry::new(&ctx.config).resolve(&ctx.state, ctx.cwd.clone())?;
+    Registry::ensure_available(&opts)?;
+    let sessions_dir = ctx.sessions_dir();
+    let state_path = ctx.paths.state();
+
+    // Pipe mode (stdin not a terminal) takes precedence over the stored capture.
+    let (command, exit_code, output, truncated) = if !std::io::stdin().is_terminal() {
+        let mut buf = String::new();
+        std::io::stdin()
+            .read_to_string(&mut buf)
+            .map_err(|e| Error::io("reading stdin", e))?;
+        ("<pipe>".to_string(), None, buf, false)
+    } else {
+        let cap = output_capture::load(&ctx.paths.capture_output(), &ctx.paths.capture_meta())?;
+        (cap.command, cap.exit_code, cap.output, cap.truncated)
+    };
+
+    let prompt_text = prompt.unwrap_or_default();
+    let client = AcpClient::new();
+    let mut renderer = Renderer::new(ctx.config.ui.stream);
+
+    let result = {
+        let mut on_chunk = |s: &str| renderer.chunk(s);
+        commands::read(
+            &opts,
+            &sessions_dir,
+            &mut ctx.state,
+            &command,
+            exit_code,
+            &output,
+            truncated,
+            &prompt_text,
+            &client,
+            &mut on_chunk,
+        )
+        .await
+    };
+
+    let outcome = result?;
+    renderer.finish(&outcome.response);
+    let _ = ctx.state.save(&state_path);
     Ok(())
 }
 

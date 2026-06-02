@@ -10,6 +10,7 @@ pub mod commands;
 pub mod config;
 pub mod error;
 pub mod files;
+pub mod output_capture;
 pub mod paths;
 pub mod picker;
 pub mod prompt;

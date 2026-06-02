@@ -21,7 +21,7 @@ shap-agent = { path = "crates/shap-agent" }
 shap-shell = { path = "crates/shap-shell" }
 
 # Async / process
-tokio = { version = "1", features = ["process", "io-util", "macros", "rt-multi-thread", "fs", "sync", "time"] }
+tokio = { version = "1", features = ["process", "io-util", "io-std", "macros", "rt-multi-thread", "fs", "sync", "time"] }
 tokio-util = { version = "0.7", features = ["compat"] }
 futures = "0.3"
 async-trait = "0.1"

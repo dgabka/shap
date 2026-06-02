@@ -92,4 +92,15 @@ mod tests {
             "User prompt:\nfix it\n\nPrevious command:\ncargo test\n\nExit code:\n101\n\nOutput:\nerror[E0277]"
         );
     }
+
+    #[test]
+    fn read_payload_snapshot_truncated() {
+        let ctx = CapturedContext {
+            command: "cargo build",
+            exit_code: None,
+            output: "line1\nline2",
+            truncated: true,
+        };
+        insta::assert_snapshot!(compose_read("what broke?", &ctx));
+    }
 }
