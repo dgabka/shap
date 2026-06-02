@@ -91,6 +91,16 @@ pub enum Command {
         json: bool,
     },
 
+    /// Inspect configuration.
+    Config {
+        /// Print the configuration JSON schema (generated from the types).
+        #[arg(long)]
+        schema: bool,
+    },
+
+    /// Generate shell completions for the given shell.
+    Completions { shell: clap_complete::Shell },
+
     /// Print the prompt segment from cached state (used by the shell hook).
     ///
     /// Cheap by design: reads only state.json, never the config or an agent.

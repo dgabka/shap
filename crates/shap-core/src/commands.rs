@@ -170,6 +170,14 @@ pub fn doctor_json(report: &crate::doctor::Report) -> Result<String> {
         .map_err(|e| Error::AgentProtocol(format!("serializing doctor report: {e}")))
 }
 
+/// The configuration JSON schema, generated from the Rust types (`shap config
+/// --schema`).
+pub fn config_schema() -> Result<String> {
+    let schema = schemars::schema_for!(Config);
+    serde_json::to_string_pretty(&schema)
+        .map_err(|e| Error::AgentProtocol(format!("serializing config schema: {e}")))
+}
+
 /// Result of a successful [`send`].
 #[derive(Debug, Clone)]
 pub struct SendOutcome {

@@ -206,14 +206,14 @@ end-to-end tests `tests/integration/`.
 
 **Purpose**: Docs, completions, packaging, and final quality gates.
 
-- [ ] T059 [P] Write `docs/config.md` (config reference + generated JSON schema)
-- [ ] T060 [P] Write `docs/shell-integration.md` (install, prompt segment, `:commit` widget)
-- [ ] T061 [P] Write `docs/agents.md` (configuring ACP agents, agent-specific passthrough)
-- [ ] T062 [P] Export the config JSON schema via `schemars` (e.g. `shap config --schema`) in `crates/shap-core/src/config.rs`
-- [ ] T063 [P] Generate shell completions via `clap_complete` (`shap completions <shell>`) in `crates/shap-cli/src/cli.rs`
-- [ ] T064 Configure `cargo-dist` release metadata (targets: macOS arm64/x86_64, Linux x86_64/arm64) in `Cargo.toml` and add `.github/workflows/release.yml`
-- [ ] T065 [P] Run the quickstart.md acceptance smoke checklist end-to-end and fix gaps
-- [ ] T066 Final quality gate: `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo nextest run --all-features`, `cargo audit`, `cargo deny check` all green
+- [x] T059 [P] Write `docs/config.md` (config reference + generated JSON schema)
+- [x] T060 [P] Write `docs/shell-integration.md` (install, prompt segment, `:commit` widget)
+- [x] T061 [P] Write `docs/agents.md` (configuring ACP agents, agent-specific passthrough)
+- [x] T062 [P] Export the config JSON schema via `schemars` (e.g. `shap config --schema`) in `crates/shap-core/src/config.rs`
+- [x] T063 [P] Generate shell completions via `clap_complete` (`shap completions <shell>`) in `crates/shap-cli/src/cli.rs`
+- [x] T064 Configure `cargo-dist` release metadata (targets: macOS arm64/x86_64, Linux x86_64/arm64) in `Cargo.toml` and add `.github/workflows/release.yml`
+- [x] T065 [P] Run the quickstart.md acceptance smoke checklist end-to-end and fix gaps
+- [x] T066 Final quality gate: `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo nextest run --all-features`, `cargo audit`, `cargo deny check` all green
 
 ---
 

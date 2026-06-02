@@ -267,6 +267,26 @@ pub fn prompt_segment(config_override: Option<PathBuf>) -> Result<(), Error> {
     Ok(())
 }
 
+/// `shap config [--schema]` — print the config schema, or the resolved config
+/// path.
+pub fn config(config_override: Option<PathBuf>, schema: bool) -> Result<(), Error> {
+    if schema {
+        println!("{}", commands::config_schema()?);
+    } else {
+        let env = EnvVars::from_process();
+        let paths = Paths::resolve(&env, config_override);
+        println!("{}", paths.config().display());
+    }
+    Ok(())
+}
+
+/// `shap completions <shell>` — print a completion script for the shell.
+pub fn completions(shell: clap_complete::Shell) {
+    use clap::CommandFactory;
+    let mut cmd = crate::cli::Cli::command();
+    clap_complete::generate(shell, &mut cmd, "shap", &mut std::io::stdout());
+}
+
 /// `shap doctor` — validate the installation. Exits 0 if all critical checks
 /// pass, else 1. A config error is reported as a failing check, not an abort.
 pub fn doctor(
