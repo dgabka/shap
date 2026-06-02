@@ -9,7 +9,7 @@ use shap_agent::registry::Registry;
 use shap_core::config::Config;
 use shap_core::paths::{EnvVars, Paths};
 use shap_core::state::ActiveState;
-use shap_core::{Error, commands, output_capture, picker};
+use shap_core::{Error, commands, doctor, output_capture, picker};
 use shap_shell::render::Renderer;
 
 /// Loaded runtime context shared by handlers.
@@ -265,4 +265,30 @@ pub fn prompt_segment(config_override: Option<PathBuf>) -> Result<(), Error> {
     let state = ActiveState::load(&paths.state())?;
     print!("{}", shap_shell::prompt::segment(&state));
     Ok(())
+}
+
+/// `shap doctor` — validate the installation. Exits 0 if all critical checks
+/// pass, else 1. A config error is reported as a failing check, not an abort.
+pub fn doctor(
+    config_override: Option<PathBuf>,
+    _cwd_override: Option<PathBuf>,
+    json: bool,
+) -> Result<i32, Error> {
+    let env = EnvVars::from_process();
+    let paths = Paths::resolve(&env, config_override);
+    let config = Config::load(paths.config());
+    let state = ActiveState::load(&paths.state()).unwrap_or_default();
+    let sessions_dir = config
+        .as_ref()
+        .map(|c| c.sessions_dir(&paths, &env))
+        .unwrap_or_else(|_| paths.default_sessions_dir());
+
+    let report = doctor::run(config.as_ref(), &state, &sessions_dir, &doctor::RealProbe);
+
+    if json {
+        println!("{}", commands::doctor_json(&report)?);
+    } else {
+        print!("{report}");
+    }
+    Ok(if report.ok() { 0 } else { 1 })
 }

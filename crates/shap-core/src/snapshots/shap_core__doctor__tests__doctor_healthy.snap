@@ -1,0 +1,11 @@
+---
+source: crates/shap-core/src/doctor.rs
+expression: report.to_string()
+---
+[ok  ] config: loaded and valid
+[ok  ] git: available
+[ok  ] picker: `fzf` available
+[ok  ] agent:claude: `claude-agent-acp` on PATH
+[ok  ] agent:codex: `codex-acp` on PATH
+[ok  ] sessions: directory is writable
+[ok  ] shell: integration active (zsh)

@@ -189,14 +189,14 @@ end-to-end tests `tests/integration/`.
 
 ### Tests for User Story 6
 
-- [ ] T054 [P] [US6] Snapshot tests: `shap doctor` report and the missing-agent diagnostic via `insta` in `tests/integration/doctor.rs`
+- [x] T054 [P] [US6] Snapshot tests: `shap doctor` report and the missing-agent diagnostic via `insta` in `tests/integration/doctor.rs`
 
 ### Implementation for User Story 6
 
-- [ ] T055 [US6] Implement doctor checks (config exists/parses, agent commands on PATH, selected agent/model validity, picker presence if configured, git available, session dir writable, agent process can launch, shell integration installed) in `crates/shap-core/src/doctor.rs` (depends on T009, T010, T020, T032, T051)
-- [ ] T056 [US6] Implement the `doctor` handler (human report + `--json`, exit 0/1) in `crates/shap-core/src/commands.rs` (depends on T055)
-- [ ] T057 [US6] Implement graceful degradation: agent-unavailable mid-stream produces a readable error recorded as an `error` session record in `crates/shap-core/src/commands.rs` and `crates/shap-agent/src/acp.rs` (depends on T027, T021)
-- [ ] T058 [US6] Add the Zsh `:doctor` mapping in `shell/zsh/shap.zsh` (depends on T056)
+- [x] T055 [US6] Implement doctor checks (config exists/parses, agent commands on PATH, selected agent/model validity, picker presence if configured, git available, session dir writable, agent process can launch, shell integration installed) in `crates/shap-core/src/doctor.rs` (depends on T009, T010, T020, T032, T051)
+- [x] T056 [US6] Implement the `doctor` handler (human report + `--json`, exit 0/1) in `crates/shap-core/src/commands.rs` (depends on T055)
+- [x] T057 [US6] Implement graceful degradation: agent-unavailable mid-stream produces a readable error recorded as an `error` session record in `crates/shap-core/src/commands.rs` and `crates/shap-agent/src/acp.rs` (depends on T027, T021)
+- [x] T058 [US6] Add the Zsh `:doctor` mapping in `shell/zsh/shap.zsh` (depends on T056)
 
 **Checkpoint**: All six user stories independently functional.
 

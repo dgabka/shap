@@ -1,0 +1,11 @@
+---
+source: crates/shap-core/src/doctor.rs
+expression: report.to_string()
+---
+[ok  ] config: loaded and valid
+[ok  ] git: available
+[warn] picker: `fzf` not found; falling back to the built-in picker
+[ok  ] agent:claude: `claude-agent-acp` on PATH
+[FAIL] agent:codex: `codex-acp` not found on PATH
+[ok  ] sessions: directory is writable
+[warn] shell: integration not detected; source shell/zsh/shap.zsh

@@ -17,6 +17,9 @@ if ! command -v "${SHAP_BIN}" >/dev/null 2>&1; then
   return 0 2>/dev/null || exit 0
 fi
 
+# Marker so `:doctor` can confirm the integration is active.
+export SHAP_SHELL_INTEGRATION=zsh
+
 # --- colon subcommands -------------------------------------------------------
 # Function names may contain ':'. These never collide with the `:` builtin,
 # which only matches the bare word `:` (used by the chat widget below).

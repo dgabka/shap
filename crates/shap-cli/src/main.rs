@@ -47,7 +47,7 @@ async fn dispatch(args: Cli) -> Result<i32, Error> {
         Command::Commit { .. } => app::commit(config, cwd).await.map(ok),
         Command::Run { command } => app::run(config, cwd, &command).await,
         Command::Read { prompt } => app::read(config, cwd, prompt).await.map(ok),
-        Command::Doctor { .. } => Err(unimplemented("doctor")),
+        Command::Doctor { json } => app::doctor(config, cwd, json),
         Command::PromptSegment => app::prompt_segment(config).map(ok),
     }
 }
@@ -55,10 +55,6 @@ async fn dispatch(args: Cli) -> Result<i32, Error> {
 /// Map a successful unit result to exit code 0.
 fn ok(_: ()) -> i32 {
     0
-}
-
-fn unimplemented(command: &'static str) -> Error {
-    Error::Unimplemented { command }
 }
 
 fn init_tracing() {

@@ -164,6 +164,12 @@ pub fn status_json(status: &Status) -> Result<String> {
         .map_err(|e| Error::AgentProtocol(format!("serializing status: {e}")))
 }
 
+/// Serialize a doctor [`Report`](crate::doctor::Report) to JSON (`shap doctor --json`).
+pub fn doctor_json(report: &crate::doctor::Report) -> Result<String> {
+    serde_json::to_string(report)
+        .map_err(|e| Error::AgentProtocol(format!("serializing doctor report: {e}")))
+}
+
 /// Result of a successful [`send`].
 #[derive(Debug, Clone)]
 pub struct SendOutcome {
