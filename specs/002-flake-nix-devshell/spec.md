@@ -98,7 +98,7 @@ run entry point and confirm `shap` starts and responds (e.g. prints version/help
 - **FR-001**: The repository MUST provide a single flake entry point at the repository root that
   exposes the dev shell, the package, and the runnable app.
 - **FR-002**: The dev shell MUST provide the project's pinned Rust toolchain at the version the
-  workspace requires (currently Rust 1.85 / edition 2024), so contributors do not match it by hand.
+  workspace requires (currently Rust 1.88 / edition 2024), so contributors do not match it by hand.
 - **FR-003**: The dev shell MUST provide the build and test tooling the project uses (workspace build,
   the test runner, formatter, and linter) such that the documented build/test/format/lint commands
   succeed using only shell-provided tools.
