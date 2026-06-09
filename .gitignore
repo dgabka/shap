@@ -4,6 +4,8 @@
 
 # direnv / nix
 /.direnv/
+/result
+/result-*
 
 # insta pending snapshots
 *.snap.new
