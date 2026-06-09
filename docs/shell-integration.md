@@ -71,3 +71,8 @@ shown via a ZLE message.
 ```sh
 shap completions zsh  > "${fpath[1]}/_shap"   # or bash/fish/…
 ```
+
+## See also
+
+- [Getting started](./getting-started.md) · [Configuration](./config.md) ·
+  [Documentation index](./index.md)

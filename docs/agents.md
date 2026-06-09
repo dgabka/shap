@@ -63,3 +63,8 @@ recorded in the session log and surfaced clearly.
   conversation continuity is at the local session-log level.
 - Model/reasoning selection is tracked and shown, and is available to adapters via passthrough;
   forwarding it into the ACP session itself is adapter-dependent.
+
+## See also
+
+- [Getting started](./getting-started.md) · [Configuration](./config.md) ·
+  [Documentation index](./index.md)

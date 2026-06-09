@@ -69,3 +69,8 @@ a message naming the missing system. Windows is out of scope.
 nix flake check
 nix flake metadata   # lists locked inputs: nixpkgs, rust-overlay, llm-agents
 ```
+
+## See also
+
+- [Installation](./installation.md) · [Getting started](./getting-started.md) ·
+  [Documentation index](./index.md)

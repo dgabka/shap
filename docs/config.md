@@ -86,3 +86,8 @@ shap config --schema
 Machine-written, updated atomically. Holds the active agent/model/reasoning/session and last cwd.
 Selections that no longer exist in the config are dropped on the next read (and repaired on the next
 selection). It is safe to delete — `shap` treats a missing file as a fresh install.
+
+## See also
+
+- [Getting started](./getting-started.md) · [Agents](./agents.md) ·
+  [Documentation index](./index.md)
