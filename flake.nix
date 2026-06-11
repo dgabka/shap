@@ -9,6 +9,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Crane has no flake inputs of its own; it picks up our nixpkgs via mkLib.
+    crane.url = "github:ipetkov/crane";
+
     # ACP adapters and coding agents, daily-built and cached upstream.
     # Intentionally not following our nixpkgs so we hit the upstream binary cache.
     llm-agents.url = "github:numtide/llm-agents.nix";
@@ -19,6 +22,7 @@
       self,
       nixpkgs,
       rust-overlay,
+      crane,
       llm-agents,
     }:
     let
@@ -40,6 +44,53 @@
       # Single pinned toolchain (rust-toolchain.toml), shared by the dev shell
       # and the package build so what you test is what you ship.
       rustToolchainFor = system: (pkgsFor system).rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+
+      # Crane builds dependencies in a separate derivation (buildDepsOnly),
+      # so source-only changes reuse the compiled dependency artifacts
+      # instead of rebuilding every crate from scratch.
+      craneOutputsFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+          craneLib = (crane.mkLib pkgs).overrideToolchain (rustToolchainFor system);
+
+          # Cargo sources plus insta `.snap` snapshot files, which the test
+          # suite reads during the check phase.
+          src = pkgs.lib.cleanSourceWith {
+            src = ./.;
+            filter =
+              path: type:
+              (craneLib.filterCargoSources path type) || (pkgs.lib.hasSuffix ".snap" path);
+            name = "source";
+          };
+
+          commonArgs = {
+            pname = "shap";
+            version = "0.1.0";
+            inherit src;
+            strictDeps = true;
+          };
+
+          cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+        in
+        {
+          shap = craneLib.buildPackage (
+            commonArgs
+            // {
+              inherit cargoArtifacts;
+              # The commit tests shell out to `git`; make it available in the check phase.
+              nativeCheckInputs = [ pkgs.git ];
+            }
+          );
+
+          clippy = craneLib.cargoClippy (
+            commonArgs
+            // {
+              inherit cargoArtifacts;
+              cargoClippyExtraArgs = "--all-targets -- --deny warnings";
+            }
+          );
+        };
     in
     {
       devShells = forAllSystems (
@@ -70,26 +121,15 @@
       );
 
       packages = forAllSystems (
-        system:
-        let
-          pkgs = pkgsFor system;
-          rustToolchain = rustToolchainFor system;
-          rustPlatform = pkgs.makeRustPlatform {
-            cargo = rustToolchain;
-            rustc = rustToolchain;
-          };
-        in
-        rec {
-          shap = rustPlatform.buildRustPackage {
-            pname = "shap";
-            version = "0.1.0";
-            src = pkgs.lib.cleanSource ./.;
-            cargoLock.lockFile = ./Cargo.lock;
-
-            # The commit tests shell out to `git`; make it available in the check phase.
-            nativeCheckInputs = [ pkgs.git ];
-          };
+        system: rec {
+          shap = (craneOutputsFor system).shap;
           default = shap;
+        }
+      );
+
+      checks = forAllSystems (
+        system: {
+          inherit (craneOutputsFor system) shap clippy;
         }
       );
 
