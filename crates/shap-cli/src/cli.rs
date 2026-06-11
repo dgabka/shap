@@ -91,8 +91,13 @@ pub enum Command {
         json: bool,
     },
 
-    /// Inspect configuration.
+    /// Inspect or edit configuration.
+    ///
+    /// With no subcommand: opens the interactive editor on a terminal, else
+    /// prints the resolved config path (back-compatible for scripts).
     Config {
+        #[command(subcommand)]
+        action: Option<ConfigAction>,
         /// Print the configuration JSON schema (generated from the types).
         #[arg(long)]
         schema: bool,
@@ -106,4 +111,15 @@ pub enum Command {
     /// Cheap by design: reads only state.json, never the config or an agent.
     #[command(hide = true)]
     PromptSegment,
+}
+
+/// Subcommands of `shap config`.
+#[derive(Debug, Subcommand)]
+pub enum ConfigAction {
+    /// Print the resolved config path.
+    Path,
+    /// Print the configuration JSON schema.
+    Schema,
+    /// Interactively edit the config (requires a terminal).
+    Edit,
 }

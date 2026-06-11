@@ -1,8 +1,10 @@
 //! User configuration (`config.toml`).
 //!
-//! Loaded read-only — shap never rewrites the user's config. Validation runs
-//! on load and produces actionable diagnostics (see [`crate::error`]). Unknown
-//! keys under `[agents.<name>]` are preserved as opaque passthrough (FR-022).
+//! Loaded read-only on the hot path; the only writes are user-initiated, via
+//! the first-run wizard and `shap config edit` ([`Config::write`], atomic and
+//! validate-first). Validation runs on load and produces actionable
+//! diagnostics (see [`crate::error`]). Unknown keys under `[agents.<name>]` are
+//! preserved as opaque passthrough (FR-022) and survive a write round-trip.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -148,6 +150,35 @@ impl Config {
         })?;
         config.validate()?;
         Ok(config)
+    }
+
+    /// Validate, then atomically write the config to `path` (temp file in the
+    /// same dir + rename, so a crash never leaves a partial config). Never
+    /// writes an invalid config (FR-004/FR-007). Mirrors [`crate::state`]'s
+    /// atomic-write pattern.
+    pub fn write(&self, path: &Path) -> Result<()> {
+        self.validate()?;
+        let body = toml::to_string_pretty(self)
+            .map_err(|e| Error::AgentProtocol(format!("serializing config: {e}")))?;
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| Error::ConfigWriteFailed {
+                path: path.to_path_buf(),
+                source: e,
+            })?;
+        }
+        let tmp = path.with_file_name(format!(".config.{}.tmp", std::process::id()));
+        std::fs::write(&tmp, body.as_bytes()).map_err(|e| Error::ConfigWriteFailed {
+            path: tmp.clone(),
+            source: e,
+        })?;
+        std::fs::rename(&tmp, path).map_err(|e| {
+            let _ = std::fs::remove_file(&tmp);
+            Error::ConfigWriteFailed {
+                path: path.to_path_buf(),
+                source: e,
+            }
+        })?;
+        Ok(())
     }
 
     /// Validate cross-field invariants (data-model § Validation summary).
@@ -318,6 +349,35 @@ max_output_bytes = 0
     fn missing_file_is_config_not_found() {
         let err = Config::load(Path::new("/nonexistent/shap/config.toml")).unwrap_err();
         assert!(matches!(err, Error::ConfigNotFound { .. }), "{err:?}");
+    }
+
+    #[test]
+    fn write_round_trip_preserves_passthrough_and_validates() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("nested/config.toml");
+        let c = parse(valid_toml());
+        c.write(&path).expect("write");
+        let reloaded = Config::load(&path).expect("reload");
+        // FR-008: opaque passthrough survives the write round-trip.
+        assert_eq!(
+            reloaded.agents["codex"].passthrough().get("api_key_env"),
+            Some(&"OPENAI_API_KEY".to_string())
+        );
+        assert_eq!(reloaded.default_agent, "codex");
+    }
+
+    #[test]
+    fn write_rejects_invalid_config_and_creates_no_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.toml");
+        let mut c = parse(valid_toml());
+        c.default_agent = "missing".to_string();
+        let err = c.write(&path).unwrap_err();
+        assert!(matches!(err, Error::UnknownDefaultAgent { .. }), "{err:?}");
+        assert!(
+            !path.exists(),
+            "no file must be written on validation failure"
+        );
     }
 
     #[test]

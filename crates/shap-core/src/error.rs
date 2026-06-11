@@ -33,6 +33,17 @@ pub enum Error {
         source: toml::de::Error,
     },
 
+    #[error("failed to write config at {path}")]
+    #[diagnostic(
+        code(shap::config::write),
+        help("check the directory exists and is writable, then retry.")
+    )]
+    ConfigWriteFailed {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+
     #[error("no agents configured")]
     #[diagnostic(
         code(shap::config::no_agents),

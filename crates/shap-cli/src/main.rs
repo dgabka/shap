@@ -48,7 +48,7 @@ async fn dispatch(args: Cli) -> Result<i32, Error> {
         Command::Run { command } => app::run(config, cwd, &command).await,
         Command::Read { prompt } => app::read(config, cwd, prompt).await.map(ok),
         Command::Doctor { json } => app::doctor(config, cwd, json),
-        Command::Config { schema } => app::config(config, schema).map(ok),
+        Command::Config { action, schema } => app::config(config, action, schema).map(ok),
         Command::Completions { shell } => {
             app::completions(shell);
             Ok(0)

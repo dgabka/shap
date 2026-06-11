@@ -9,7 +9,9 @@ use shap_agent::registry::Registry;
 use shap_core::config::Config;
 use shap_core::paths::{EnvVars, Paths};
 use shap_core::state::ActiveState;
-use shap_core::{Error, commands, doctor, output_capture, picker};
+use shap_core::{Error, commands, config_wizard, doctor, output_capture, picker};
+
+use crate::cli::ConfigAction;
 use shap_shell::render::Renderer;
 
 /// Loaded runtime context shared by handlers.
@@ -29,7 +31,23 @@ impl Context {
     ) -> Result<Self, Error> {
         let env = EnvVars::from_process();
         let paths = Paths::resolve(&env, config_override);
-        let config = Config::load(paths.config())?;
+        let config = match Config::load(paths.config()) {
+            Ok(c) => c,
+            // First-run wizard (FR-001): only on a TTY, only for a *missing*
+            // config. Non-interactive callers (scripts, the prompt hook) fall
+            // through to the existing ConfigNotFound diagnostic (FR-010/011).
+            Err(Error::ConfigNotFound { path }) if std::io::stdin().is_terminal() => {
+                match config_wizard::run_wizard()? {
+                    Some(c) => {
+                        c.write(&path)?;
+                        eprintln!("Wrote {}", path.display());
+                        c
+                    }
+                    None => return Err(Error::ConfigNotFound { path }),
+                }
+            }
+            Err(e) => return Err(e),
+        };
         let mut state = ActiveState::load(&paths.state())?;
         if state.reconcile(&config) {
             let _ = state.save(&paths.state());
@@ -267,15 +285,67 @@ pub fn prompt_segment(config_override: Option<PathBuf>) -> Result<(), Error> {
     Ok(())
 }
 
-/// `shap config [--schema]` — print the config schema, or the resolved config
-/// path.
-pub fn config(config_override: Option<PathBuf>, schema: bool) -> Result<(), Error> {
+/// `shap config [path|schema|edit] [--schema]`.
+///
+/// Back-compatible defaults (FR-012): bare `config` on a non-TTY prints the
+/// resolved path; `--schema` prints the JSON schema. On a TTY, bare `config`
+/// opens the interactive editor.
+pub fn config(
+    config_override: Option<PathBuf>,
+    action: Option<ConfigAction>,
+    schema: bool,
+) -> Result<(), Error> {
+    let env = EnvVars::from_process();
+    let paths = Paths::resolve(&env, config_override);
+
     if schema {
         println!("{}", commands::config_schema()?);
-    } else {
-        let env = EnvVars::from_process();
-        let paths = Paths::resolve(&env, config_override);
-        println!("{}", paths.config().display());
+        return Ok(());
+    }
+    match action {
+        Some(ConfigAction::Schema) => println!("{}", commands::config_schema()?),
+        Some(ConfigAction::Path) => println!("{}", paths.config().display()),
+        Some(ConfigAction::Edit) => edit_config(&paths)?,
+        None => {
+            if std::io::stdin().is_terminal() {
+                edit_config(&paths)?;
+            } else {
+                println!("{}", paths.config().display());
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Interactive config editor (FR-006). Requires a terminal. A missing config
+/// drops into the first-run wizard (create); an existing config is edited.
+fn edit_config(paths: &Paths) -> Result<(), Error> {
+    if !std::io::stdin().is_terminal() {
+        return Err(Error::NonInteractivePicker {
+            command: "config edit".to_string(),
+        });
+    }
+    let path = paths.config();
+    let current = match Config::load(path) {
+        Ok(c) => c,
+        Err(Error::ConfigNotFound { .. }) => {
+            return match config_wizard::run_wizard()? {
+                Some(c) => {
+                    c.write(path)?;
+                    println!("Wrote {}", path.display());
+                    Ok(())
+                }
+                None => Ok(()),
+            };
+        }
+        Err(e) => return Err(e),
+    };
+    match config_wizard::run_editor(current)? {
+        Some(updated) => {
+            updated.write(path)?;
+            println!("Updated {}", path.display());
+        }
+        None => println!("No changes."),
     }
     Ok(())
 }

@@ -1,6 +1,8 @@
 # Configuration
 
-`shap` reads a single user-editable TOML file. The tool never rewrites it.
+`shap` reads a single user-editable TOML file. The tool writes it only when you ask it to — via the
+first-run setup wizard or `shap config edit` (see [Setup wizard & editing](#setup-wizard--editing)).
+It never rewrites the file silently or on the hot path.
 
 ## Location
 
@@ -71,7 +73,33 @@ respect_gitignore = true
 
 Validation runs on load and fails with an actionable diagnostic (never a panic):
 `default_agent` must be configured; each agent's `models` must be non-empty and contain its
-`default_model`; byte limits must be `> 0`. A missing config prints setup instructions.
+`default_model`; byte limits must be `> 0`. The same validation runs before any wizard/editor write,
+so `shap` never writes an invalid config.
+
+## Setup wizard & editing
+
+The config can be created and changed interactively — no hand-editing TOML required.
+
+- **First run**: when a command needs config and none exists, `shap` offers a short setup wizard
+  (pick an agent preset or a custom command, choose models and a default, accept UI defaults). On
+  finish it writes a validated `config.toml` and continues. This only happens on an interactive
+  terminal; in scripts, pipes, or the shell prompt hook `shap` prints setup instructions and exits
+  non-zero instead of prompting.
+- **Editing**: `shap config edit` (or bare `shap config` on a terminal) walks you through changing
+  the default agent, an agent's models/default model, the picker, streaming, and the prompt segment.
+  Changes are re-validated and written atomically; cancelling or making no change leaves the file
+  untouched.
+
+Both write paths preserve agent-specific passthrough keys (e.g. `api_key_env`). They do **not**
+preserve comments or your original key ordering — the file is re-emitted as canonical TOML. Keep
+hand-maintained comments out of the file if you intend to use `shap config edit`.
+
+Non-interactive lookups stay script-friendly:
+
+```sh
+shap config path     # print the resolved config path
+shap config          # same as `config path` when stdin is not a terminal
+```
 
 ## JSON schema
 
