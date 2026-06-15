@@ -1,5 +1,7 @@
 # shap
 
+**[Sh]ell [A]gent [P]roxy**
+
 **A shell-native interface for ACP coding agents.** Chat with coding agents (Claude Code, Codex, and
 other [ACP](https://agentclientprotocol.com)-compatible agents) straight from your terminal — no
 editor, no web UI. Type a colon and a prompt; the agent's reply prints inline.
