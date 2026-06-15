@@ -33,11 +33,22 @@ function :status    { command "${SHAP_BIN}" status    "$@" --cwd "${PWD}" }
 function :doctor    { command "${SHAP_BIN}" doctor    "$@" --cwd "${PWD}" }
 function :run       { command "${SHAP_BIN}" run            --cwd "${PWD}" -- "$@" }
 function :read      { command "${SHAP_BIN}" read "$*"      --cwd "${PWD}" }
-# `:commit` is handled by the accept-line widget below (it must edit the buffer,
-# which a normal function cannot do).
+
+# `:commit` is driven by the accept-line widget below (editing the buffer needs a
+# widget, which a plain function cannot do). This function exists so `:commit`
+# still resolves as a command word — command-word highlighters then render it as
+# valid like its siblings instead of flagging it red as unknown. On a bare
+# `:commit`/`: commit` the widget intercepts before this runs, so this body only
+# handles misuse (e.g. `:commit <args>`): it prints guidance and NEVER runs git
+# (Constitution VII).
+function :commit {
+  print -ru2 -- "shap: type ':commit' on its own line and press Enter to prefill the commit command for review."
+  return 1
+}
 
 # --- accept-line widget -------------------------------------------------------
-# Handles two leading-colon cases without disturbing the `:` builtin:
+# Handles two leading-colon cases without disturbing the `:` builtin. It owns the
+# bare-`:commit` behavior and intercepts before the `:commit` function above runs:
 #   `:commit`  → replace the buffer with the generated `git commit` line for
 #                review (NEVER executed automatically — Constitution VII).
 #   `: <text>` → run `shap send <text>` (colon-space only, so `: ${x:=y}` and

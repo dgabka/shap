@@ -39,6 +39,12 @@ The bare `: <prompt>` chat is an `accept-line` widget that triggers **only** on 
 so ordinary uses of the `:` builtin (e.g. `: ${VAR:=default}`) are untouched. The `:cmd` forms are
 plain functions whose names contain `:` and never collide with the builtin.
 
+Every `:cmd` — including `:commit` — is defined as a function, so command-word highlighters
+(zsh-syntax-highlighting, fast-syntax-highlighting) resolve it and render it as a valid command rather
+than flagging it red as unknown. `:commit`'s behavior is still driven by the `accept-line` widget (see
+below); its function exists only so the word resolves for highlighting, and it prints usage guidance
+(never runs git) if invoked with arguments like `:commit foo`.
+
 ## Prompt segment
 
 A `precmd` hook caches the segment once per prompt into `$SHAP_PROMPT_INFO` (it reads only
@@ -64,7 +70,8 @@ export SHAP_PROMPT_SEGMENT=0
 Typing `:commit` and pressing Enter runs `shap commit --prefill-shell-buffer`, captures the single
 `git commit -am "…"` line, and replaces the buffer with it for review. **It never executes the commit**
 — you edit and press Enter yourself (Constitution VII). Errors (not a repo, nothing to commit) are
-shown via a ZLE message.
+shown via a ZLE message. The widget intercepts a bare `:commit` before the `:commit` function would
+run, so the function (which only resolves the word for highlighting) never fires in this path.
 
 ## Completions
 
