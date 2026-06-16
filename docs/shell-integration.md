@@ -34,6 +34,9 @@ If `shap` is not on PATH, the integration prints a notice and stays inactive.
 | `:read <prompt>` | `shap read "<prompt>"` |
 | `:commit` | prefills the buffer with `git commit -am "…"` (never runs it) |
 | `:doctor` | `shap doctor` |
+| `:config` | `shap config` — interactive TUI editor (on a TTY) |
+| `:config open` | opens the raw TOML in `$EDITOR` / `$VISUAL` / vim / vi / nano |
+| `:config path` | prints the resolved config file path |
 
 The bare `: <prompt>` chat is an `accept-line` widget that triggers **only** on a leading colon-space,
 so ordinary uses of the `:` builtin (e.g. `: ${VAR:=default}`) are untouched. The `:cmd` forms are

@@ -87,14 +87,17 @@ The config can be created and changed interactively — no hand-editing TOML req
   finish it writes a validated `config.toml` and continues. This only happens on an interactive
   terminal; in scripts, pipes, or the shell prompt hook `shap` prints setup instructions and exits
   non-zero instead of prompting.
-- **Editing**: `shap config edit` (or bare `shap config` on a terminal) walks you through changing
-  the default agent, an agent's models/default model, the picker, streaming, and the prompt segment.
-  Changes are re-validated and written atomically; cancelling or making no change leaves the file
-  untouched.
+- **Interactive editor**: `shap config edit` (or bare `shap config` on a terminal) walks you through
+  changing the default agent, an agent's models/default model, the picker, streaming, and the prompt
+  segment. Changes are re-validated and written atomically; cancelling or making no change leaves the
+  file untouched.
+- **Raw file editor**: `shap config open` opens the config TOML directly in your `$VISUAL` or
+  `$EDITOR` (falling back to `vim`, `vi`, then `nano`). After the editor exits `shap` validates the
+  file and reports any errors. If no config exists yet, the setup wizard runs first to create one.
 
-Both write paths preserve agent-specific passthrough keys (e.g. `api_key_env`). They do **not**
-preserve comments or your original key ordering — the file is re-emitted as canonical TOML. Keep
-hand-maintained comments out of the file if you intend to use `shap config edit`.
+Both write paths preserve agent-specific passthrough keys (e.g. `api_key_env`). The interactive
+editor does **not** preserve comments or your original key ordering — the file is re-emitted as
+canonical TOML. Use `shap config open` if you want to keep hand-maintained comments.
 
 Non-interactive lookups stay script-friendly:
 

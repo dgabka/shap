@@ -33,6 +33,10 @@ function :status    { command "${SHAP_BIN}" status    "$@" --cwd "${PWD}" }
 function :doctor    { command "${SHAP_BIN}" doctor    "$@" --cwd "${PWD}" }
 function :run       { command "${SHAP_BIN}" run            --cwd "${PWD}" -- "$@" }
 function :read      { command "${SHAP_BIN}" read "$*"      --cwd "${PWD}" }
+# `:config`        — interactive TUI editor  (dialoguer menu, requires TTY)
+# `:config open`   — open raw TOML in $EDITOR / $VISUAL / vim / vi / nano
+# `:config path`   — print resolved config file path
+function :config    { command "${SHAP_BIN}" config    "$@" --cwd "${PWD}" }
 
 # `:commit` is driven by the accept-line widget below (editing the buffer needs a
 # widget, which a plain function cannot do). This function exists so `:commit`

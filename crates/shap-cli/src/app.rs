@@ -289,7 +289,64 @@ pub fn prompt_segment(config_override: Option<PathBuf>) -> Result<(), Error> {
     Ok(())
 }
 
-/// `shap config [path|schema|edit] [--schema]`.
+/// Resolve the editor to launch: $VISUAL → $EDITOR → vim → vi → nano.
+fn resolve_editor() -> Result<String, Error> {
+    for var in ["VISUAL", "EDITOR"] {
+        if let Ok(e) = std::env::var(var) {
+            let e = e.trim().to_string();
+            if !e.is_empty() {
+                return Ok(e);
+            }
+        }
+    }
+    let on_path = |name: &str| {
+        std::env::var_os("PATH")
+            .map(|p| std::env::split_paths(&p).any(|d| d.join(name).exists()))
+            .unwrap_or(false)
+    };
+    for fallback in ["vim", "vi", "nano"] {
+        if on_path(fallback) {
+            return Ok(fallback.to_string());
+        }
+    }
+    Err(Error::EditorNotFound)
+}
+
+/// Open the config file in the resolved editor, then validate on exit.
+fn open_config_in_editor(paths: &Paths) -> Result<(), Error> {
+    if !std::io::stdin().is_terminal() {
+        return Err(Error::NonInteractivePicker {
+            command: "config open".to_string(),
+        });
+    }
+    let path = paths.config();
+    if !path.exists() {
+        match config_wizard::run_wizard()? {
+            Some(c) => {
+                c.write(&path)?;
+                eprintln!("Created {}. Opening in editor…", path.display());
+            }
+            None => return Ok(()),
+        }
+    }
+    let editor = resolve_editor()?;
+    let status = std::process::Command::new(&editor)
+        .arg(&path)
+        .status()
+        .map_err(|e| Error::io(format!("launching {editor}"), e))?;
+    if !status.success() {
+        eprintln!("shap: {editor} exited with {status}");
+    }
+    Config::load(&path).map(|_| ()).map_err(|e| {
+        eprintln!(
+            "shap: config invalid after edit — fix it with `shap config open` or at {}",
+            path.display()
+        );
+        e
+    })
+}
+
+/// `shap config [path|schema|edit|open] [--schema]`.
 ///
 /// Back-compatible defaults (FR-012): bare `config` on a non-TTY prints the
 /// resolved path; `--schema` prints the JSON schema. On a TTY, bare `config`
@@ -310,6 +367,7 @@ pub fn config(
         Some(ConfigAction::Schema) => println!("{}", commands::config_schema()?),
         Some(ConfigAction::Path) => println!("{}", paths.config().display()),
         Some(ConfigAction::Edit) => edit_config(&paths)?,
+        Some(ConfigAction::Open) => open_config_in_editor(&paths)?,
         None => {
             if std::io::stdin().is_terminal() {
                 edit_config(&paths)?;

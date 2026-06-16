@@ -95,6 +95,7 @@ pub enum Command {
     ///
     /// With no subcommand: opens the interactive editor on a terminal, else
     /// prints the resolved config path (back-compatible for scripts).
+    /// `config open` opens the raw TOML file in $EDITOR instead.
     Config {
         #[command(subcommand)]
         action: Option<ConfigAction>,
@@ -122,4 +123,6 @@ pub enum ConfigAction {
     Schema,
     /// Interactively edit the config (requires a terminal).
     Edit,
+    /// Open the raw config TOML in $VISUAL / $EDITOR / vim / vi / nano.
+    Open,
 }

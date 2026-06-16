@@ -169,6 +169,13 @@ pub enum Error {
     )]
     NonInteractivePicker { command: String },
 
+    #[error("no suitable editor found")]
+    #[diagnostic(
+        code(shap::config::no_editor),
+        help("set $EDITOR or $VISUAL, or install vim/vi/nano.")
+    )]
+    EditorNotFound,
+
     #[error("nothing to choose from")]
     #[diagnostic(code(shap::picker::empty))]
     PickerEmpty,
