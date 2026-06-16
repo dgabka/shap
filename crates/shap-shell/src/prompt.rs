@@ -7,9 +7,12 @@
 
 use shap_core::state::ActiveState;
 
-/// Build the prompt segment, e.g. `[shap codex·gpt-5·high]`. Returns an empty
+/// Build the prompt segment, e.g. `shap codex·gpt-5·high`. Returns an empty
 /// string when nothing is selected, so the shell can render nothing.
-pub fn segment(state: &ActiveState) -> String {
+///
+/// `icon` replaces the literal "shap" prefix — pass a Nerd Font glyph when
+/// the user has `ui.prompt_icon` set, or `None` to fall back to "shap".
+pub fn segment(state: &ActiveState, icon: Option<&str>) -> String {
     let mut parts: Vec<&str> = Vec::with_capacity(3);
     if let Some(agent) = &state.active_agent {
         parts.push(agent);
@@ -23,7 +26,7 @@ pub fn segment(state: &ActiveState) -> String {
     if parts.is_empty() {
         String::new()
     } else {
-        format!("[shap {}]", parts.join("·"))
+        format!("{} {}", icon.unwrap_or("shap"), parts.join("·"))
     }
 }
 
@@ -33,7 +36,7 @@ mod tests {
 
     #[test]
     fn empty_state_is_blank() {
-        assert_eq!(segment(&ActiveState::default()), "");
+        assert_eq!(segment(&ActiveState::default(), None), "");
     }
 
     #[test]
@@ -42,7 +45,7 @@ mod tests {
             active_agent: Some("codex".into()),
             ..Default::default()
         };
-        assert_eq!(segment(&state), "[shap codex]");
+        assert_eq!(segment(&state, None), "shap codex");
     }
 
     #[test]
@@ -53,6 +56,15 @@ mod tests {
             active_reasoning: Some("high".into()),
             ..Default::default()
         };
-        assert_eq!(segment(&state), "[shap codex·gpt-5·high]");
+        assert_eq!(segment(&state, None), "shap codex·gpt-5·high");
+    }
+
+    #[test]
+    fn custom_icon() {
+        let state = ActiveState {
+            active_agent: Some("codex".into()),
+            ..Default::default()
+        };
+        assert_eq!(segment(&state, Some("\u{e000}")), "\u{e000} codex");
     }
 }

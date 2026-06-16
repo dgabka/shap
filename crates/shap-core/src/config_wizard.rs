@@ -198,6 +198,7 @@ fn prompt_ui(theme: &ColorfulTheme) -> Result<UiOptions> {
         stream,
         picker,
         show_prompt_segment,
+        prompt_icon: None,
     })
 }
 

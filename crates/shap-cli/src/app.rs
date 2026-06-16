@@ -275,13 +275,17 @@ pub async fn commit(
     Ok(())
 }
 
-/// `shap prompt-segment` — print the cached prompt segment. Reads only
-/// state.json (no config, no agent) so the shell hook stays cheap.
+/// `shap prompt-segment` — print the cached prompt segment. Reads state.json
+/// and (optionally) config.toml for the `ui.prompt_icon` glyph. Config errors
+/// are silently ignored so the prompt stays silent rather than noisy.
 pub fn prompt_segment(config_override: Option<PathBuf>) -> Result<(), Error> {
     let env = EnvVars::from_process();
     let paths = Paths::resolve(&env, config_override);
     let state = ActiveState::load(&paths.state())?;
-    print!("{}", shap_shell::prompt::segment(&state));
+    let icon = Config::load(paths.config())
+        .ok()
+        .and_then(|c| c.ui.prompt_icon);
+    print!("{}", shap_shell::prompt::segment(&state, icon.as_deref()));
     Ok(())
 }
 

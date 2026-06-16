@@ -78,6 +78,9 @@ pub struct UiOptions {
     pub picker: Picker,
     /// Toggles the optional prompt segment (FR-008).
     pub show_prompt_segment: bool,
+    /// Nerd Font glyph shown instead of "shap" in the prompt segment.
+    /// Leave unset (or set to null) to show the plain text "shap".
+    pub prompt_icon: Option<String>,
 }
 
 impl Default for UiOptions {
@@ -86,6 +89,7 @@ impl Default for UiOptions {
             stream: true,
             picker: Picker::Fzf,
             show_prompt_segment: true,
+            prompt_icon: None,
         }
     }
 }
