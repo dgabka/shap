@@ -180,7 +180,7 @@ fn prompt_ui(theme: &ColorfulTheme) -> Result<UiOptions> {
     let pickers = ["fzf", "skim", "builtin"];
     let pidx = Select::with_theme(theme)
         .with_prompt("Picker")
-        .items(&pickers)
+        .items(pickers)
         .default(0)
         .interact()
         .map_err(wiz_err)?;
@@ -271,7 +271,7 @@ pub fn run_editor(mut config: Config) -> Result<Option<Config>> {
     loop {
         let idx = Select::with_theme(&theme)
             .with_prompt("Edit config")
-            .items(&actions)
+            .items(actions)
             .default(0)
             .interact()
             .map_err(wiz_err)?;
@@ -318,7 +318,7 @@ pub fn run_editor(mut config: Config) -> Result<Option<Config>> {
                 let pickers = ["fzf", "skim", "builtin"];
                 let pidx = Select::with_theme(&theme)
                     .with_prompt("Picker")
-                    .items(&pickers)
+                    .items(pickers)
                     .default(0)
                     .interact()
                     .map_err(wiz_err)?;
