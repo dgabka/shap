@@ -34,6 +34,7 @@ default_model = "sonnet"
 stream = true              # stream replies vs. spinner-then-final
 picker = "fzf"             # fzf | skim | builtin (falls back at runtime)
 show_prompt_segment = true
+# prompt_icon = ""        # Nerd Font glyph; unset → "shap" prefix
 
 [history]
 dir = "~/.local/share/shap/sessions"
@@ -60,6 +61,7 @@ respect_gitignore = true
 - `stream` (bool, default `true`)
 - `picker` (`fzf` | `skim` | `builtin`, default `fzf`)
 - `show_prompt_segment` (bool, default `true`)
+- `prompt_icon` (string, optional) — Nerd Font glyph shown instead of `shap` in the prompt segment. Unset renders the plain `shap` prefix.
 
 ### `[history]`
 - `dir` (path, default under the data dir) — `~` and `$XDG_*` are expanded.

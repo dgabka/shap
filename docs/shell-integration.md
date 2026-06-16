@@ -57,13 +57,22 @@ PROMPT='%~ ${SHAP_PROMPT_INFO} %# '
 RPROMPT='${SHAP_PROMPT_INFO}'
 ```
 
-The segment renders as `[shap codex·gpt-5·high]`, or nothing when no selection is set. Disable it with:
+The segment renders as `shap codex·gpt-5·high`, or nothing when no selection is set.
+
+Set `ui.prompt_icon` in your config to replace the `shap` prefix with a Nerd Font glyph:
+
+```toml
+[ui]
+prompt_icon = ""   # any Nerd Font glyph
+```
+
+Disable the segment entirely:
 
 ```sh
 export SHAP_PROMPT_SEGMENT=0
 ```
 
-(also honour `[ui].show_prompt_segment` in your config for the tool side.)
+(also honours `[ui].show_prompt_segment` in your config for the tool side.)
 
 ## `:commit` widget
 
